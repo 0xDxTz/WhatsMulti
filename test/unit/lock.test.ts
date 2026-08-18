@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import { memoryLock, sessionLockKey, type LockProvider } from '../../src/lock.js';
+import { runLockConformance } from '../conformance/lock.js';
+
+runLockConformance('memory', { create: () => memoryLock() });
 
 const TTL = 30_000;
 
