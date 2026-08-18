@@ -109,5 +109,11 @@ export default tseslint.config(
     {
         files: ['test/**/*.ts'],
         rules: { '@typescript-eslint/no-non-null-assertion': 'off' },
+    },
+    {
+        // Examples are documentation that compiles. Printing is the point of most of
+        // them, and they import the package by name rather than by relative path.
+        files: ['examples/**/*.ts'],
+        rules: { 'no-console': 'off' },
     }
 );

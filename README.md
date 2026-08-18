@@ -313,7 +313,7 @@ new WhatsMulti({ storage: mongoStorage({ db }), lockProvider: mongoLock({ db }) 
 ```
 
 ```ts
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import { redisStorage, redisLock } from '@dutakey/whatsmulti/redis';
 
 const redis = new Redis(process.env.REDIS_URL!);

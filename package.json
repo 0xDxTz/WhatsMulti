@@ -53,7 +53,7 @@
     },
     "scripts": {
         "build": "tsc -p tsconfig.build.json",
-        "typecheck": "tsc -p tsconfig.json --noEmit",
+        "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p examples/tsconfig.json",
         "test": "vitest run",
         "test:watch": "vitest",
         "coverage": "vitest run --coverage",
@@ -99,6 +99,7 @@
     "devDependencies": {
         "@arethetypeswrong/cli": "^0.18.2",
         "@eslint/js": "^9.39.2",
+        "@hono/node-server": "^2.1.1",
         "@types/better-sqlite3": "^9.6.0",
         "@types/node": "^24.10.1",
         "@types/qrcode": "^1.5.6",

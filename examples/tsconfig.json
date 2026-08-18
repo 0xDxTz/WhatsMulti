@@ -1,0 +1,23 @@
+{
+    // The examples are compiled, not just displayed: an example that no longer type
+    // checks is a documentation bug, and this is what makes CI say so.
+    //
+    // `paths` points the package name at src/ so the examples read exactly as a
+    // consumer's code would, without needing a build first.
+    "extends": "../tsconfig.json",
+    "compilerOptions": {
+        "noEmit": true,
+        "rootDir": "..",
+        "baseUrl": ".",
+        "paths": {
+            "@dutakey/whatsmulti": ["../src/index.ts"],
+            "@dutakey/whatsmulti/qr": ["../src/qr/index.ts"],
+            "@dutakey/whatsmulti/mongo": ["../src/adapters/mongo/index.ts"],
+            "@dutakey/whatsmulti/redis": ["../src/adapters/redis/index.ts"],
+            "@dutakey/whatsmulti/sql": ["../src/adapters/sql/index.ts"],
+            "@dutakey/whatsmulti/webhook": ["../src/webhook/index.ts"],
+            "@dutakey/whatsmulti/server": ["../src/server/index.ts"]
+        }
+    },
+    "include": ["**/*.ts"]
+}
