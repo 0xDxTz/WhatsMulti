@@ -1,0 +1,67 @@
+# Session state machine. Identical in every runtime.
+# Generated into: src/generated/states.ts (TS), state_gen.go (Go)
+
+initial: idle
+
+states:
+    idle:
+        description: Session exists in the registry but has never been started.
+        terminal: false
+    connecting:
+        description: Socket is opening; no QR emitted yet.
+        terminal: false
+    awaiting_scan:
+        description: A QR code or pairing code is outstanding and unscanned.
+        terminal: false
+    open:
+        description: Authenticated and ready to send and receive.
+        terminal: false
+    closing:
+        description: A deliberate stop is in progress; the socket is draining.
+        terminal: false
+    closed:
+        description: Socket is down. Reconnect is permitted from here.
+        terminal: false
+    logged_out:
+        description: >
+            Credentials are no longer valid. Requires re-pairing. Reached only via a
+            disconnect cause whose action is `terminal` and whose `purge_creds` is true.
+        terminal: true
+
+# `trigger` names are part of the contract and appear in session.state events as `reason`.
+transitions:
+    - { from: idle, to: connecting, trigger: start }
+
+    - { from: connecting, to: awaiting_scan, trigger: qr }
+    - { from: connecting, to: open, trigger: connected }
+    - { from: connecting, to: closing, trigger: stop }
+    - { from: connecting, to: closed, trigger: disconnected }
+    - { from: connecting, to: logged_out, trigger: logged_out }
+
+    - { from: awaiting_scan, to: connecting, trigger: restart_required }
+    - { from: awaiting_scan, to: open, trigger: connected }
+    - { from: awaiting_scan, to: awaiting_scan, trigger: qr }
+    - { from: awaiting_scan, to: closing, trigger: stop }
+    - { from: awaiting_scan, to: closed, trigger: disconnected }
+    - { from: awaiting_scan, to: closed, trigger: qr_exhausted }
+    - { from: awaiting_scan, to: logged_out, trigger: logged_out }
+
+    - { from: open, to: closing, trigger: stop }
+    - { from: open, to: closed, trigger: disconnected }
+    - { from: open, to: logged_out, trigger: logged_out }
+
+    - { from: closing, to: closed, trigger: stopped }
+
+    - { from: closed, to: connecting, trigger: start }
+    - { from: closed, to: connecting, trigger: reconnect }
+    - { from: closed, to: logged_out, trigger: logged_out }
+
+    # Only after credentials have been purged. Returns the session to a pairable state.
+    - { from: logged_out, to: idle, trigger: reset }
+
+# States in which the session may accept an outbound send.
+sendable: [open]
+
+# States in which requestPairingCode is legal. Mirrors whatsmeow's PairPhone
+# precondition: the client must be connected and the first QR must have been seen.
+pairable: [awaiting_scan]

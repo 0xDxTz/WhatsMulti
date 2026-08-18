@@ -1,0 +1,76 @@
+# Canonical lifecycle events.
+#
+# These names and payloads are identical in every runtime and on every wire format
+# (webhook, SSE). Driver-native events (Baileys `messages.upsert`, whatsmeow
+# `*events.Message`) stay idiomatic in-process and are normalised only at the wire
+# boundary -- see wire_mapping below.
+#
+# Generated into: src/generated/events.ts (TS), events_gen.go (Go)
+
+lifecycle:
+    qr:
+        description: A new QR code is available for scanning.
+        payload:
+            qr: { type: string, description: raw QR payload, render client-side }
+            attempt: { type: int, description: 1-based, resets on a successful open }
+            expiresAt: { type: int64, description: unix milliseconds }
+
+    pairing.code:
+        description: A phone pairing code was issued.
+        payload:
+            code: { type: string, description: 'formatted XXXX-XXXX' }
+            phoneNumber: { type: string, description: digits only, no leading + }
+            expiresAt: { type: int64 }
+
+    session.created:
+        payload:
+            storage: { type: string, description: adapter name }
+
+    session.state:
+        description: Emitted on every state machine transition.
+        payload:
+            from: { type: string, enum_ref: states.yaml#states }
+            to: { type: string, enum_ref: states.yaml#states }
+            reason: { type: string, optional: true, description: the transition trigger }
+
+    session.reconnecting:
+        payload:
+            attempt: { type: int }
+            delayMs: { type: int }
+            cause: { type: string, enum_ref: disconnect-causes.yaml#causes }
+
+    session.logged_out:
+        payload:
+            cause: { type: string, enum_ref: disconnect-causes.yaml#causes }
+
+    session.removed:
+        payload:
+            reason: { type: string, enum: [deleted, logged_out] }
+
+    session.fenced:
+        description: Another instance took the session lock. This instance stopped.
+        payload:
+            owner: { type: string, description: instanceId that now holds the lock }
+
+    session.error:
+        payload:
+            code: { type: string, enum_ref: errors.yaml#errors }
+            message: { type: string }
+
+# Every emitted event carries this envelope.
+meta:
+    sessionId: { type: string }
+    instanceId: { type: string }
+    ts: { type: int64, description: unix milliseconds }
+
+# Driver-native events are exposed in-process under their native names, and on the
+# wire under a normalised name. Only the subset listed here crosses the wire; the
+# rest is in-process only.
+wire_mapping:
+    message.received: { baileys: messages.upsert, whatsmeow: '*events.Message' }
+    message.updated: { baileys: messages.update, whatsmeow: '*events.Receipt' }
+    receipt.updated: { baileys: 'message-receipt.update', whatsmeow: '*events.Receipt' }
+    presence.updated: { baileys: presence.update, whatsmeow: '*events.Presence' }
+    contact.updated: { baileys: contacts.update, whatsmeow: '*events.Contact' }
+    group.updated: { baileys: groups.update, whatsmeow: '*events.GroupInfo' }
+    history.synced: { baileys: 'messaging-history.set', whatsmeow: '*events.HistorySync' }

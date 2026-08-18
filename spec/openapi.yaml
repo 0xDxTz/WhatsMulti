@@ -1,0 +1,296 @@
+openapi: 3.1.0
+info:
+    title: WhatsMulti Control Plane
+    version: 0.1.0
+    description: >
+        Implemented identically by @dutakey/whatsmulti/server (Hono) and by
+        whatsmulti-go (net/http). An API client works unchanged against either.
+        Both are contract-tested against this document.
+    license: { name: MIT }
+
+servers:
+    - url: http://localhost:3000
+
+security:
+    - bearerAuth: []
+
+paths:
+    /sessions:
+        get:
+            operationId: listSessions
+            summary: List sessions
+            responses:
+                '200':
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                required: [sessions]
+                                properties:
+                                    sessions:
+                                        type: array
+                                        items: { $ref: '#/components/schemas/Session' }
+        post:
+            operationId: createSession
+            summary: Create a session
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [id]
+                            properties:
+                                id: { type: string, pattern: '^[A-Za-z0-9_-]{1,64}$' }
+                                storage: { type: string, default: memory }
+                                auto_start: { type: boolean, default: false }
+                                config: { type: object, additionalProperties: true }
+            responses:
+                '201': { $ref: '#/components/responses/SessionOk' }
+                '409': { $ref: '#/components/responses/Error' }
+                '422': { $ref: '#/components/responses/Error' }
+
+    /sessions/{id}:
+        parameters: [{ $ref: '#/components/parameters/SessionId' }]
+        get:
+            operationId: getSession
+            responses:
+                '200': { $ref: '#/components/responses/SessionOk' }
+                '404': { $ref: '#/components/responses/Error' }
+        delete:
+            operationId: deleteSession
+            description: >
+                Removes the session and its stored credentials. Does NOT unlink the device
+                from the phone -- use /logout for that. v1 conflated the two.
+            responses:
+                '204': { description: Deleted }
+                '404': { $ref: '#/components/responses/Error' }
+
+    /sessions/{id}/start:
+        parameters: [{ $ref: '#/components/parameters/SessionId' }]
+        post:
+            operationId: startSession
+            responses:
+                '202': { $ref: '#/components/responses/SessionOk' }
+                '404': { $ref: '#/components/responses/Error' }
+                '409': { $ref: '#/components/responses/Error' }
+
+    /sessions/{id}/stop:
+        parameters: [{ $ref: '#/components/parameters/SessionId' }]
+        post:
+            operationId: stopSession
+            responses:
+                '202': { $ref: '#/components/responses/SessionOk' }
+                '404': { $ref: '#/components/responses/Error' }
+
+    /sessions/{id}/restart:
+        parameters: [{ $ref: '#/components/parameters/SessionId' }]
+        post:
+            operationId: restartSession
+            responses:
+                '202': { $ref: '#/components/responses/SessionOk' }
+                '404': { $ref: '#/components/responses/Error' }
+
+    /sessions/{id}/logout:
+        parameters: [{ $ref: '#/components/parameters/SessionId' }]
+        post:
+            operationId: logoutSession
+            description: Unlinks the device from the phone, then purges credentials.
+            responses:
+                '202': { $ref: '#/components/responses/SessionOk' }
+                '404': { $ref: '#/components/responses/Error' }
+
+    /sessions/{id}/qr:
+        parameters:
+            - { $ref: '#/components/parameters/SessionId' }
+            - name: format
+              in: query
+              schema: { type: string, enum: [json, png], default: json }
+        get:
+            operationId: getQr
+            responses:
+                '200':
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                required: [qr, attempt, expiresAt]
+                                properties:
+                                    qr: { type: string }
+                                    attempt: { type: integer }
+                                    expiresAt: { type: integer, format: int64 }
+                        image/png:
+                            schema: { type: string, format: binary }
+                '404':
+                    description: No QR outstanding, or session not found
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Error' }
+
+    /sessions/{id}/pairing-code:
+        parameters: [{ $ref: '#/components/parameters/SessionId' }]
+        post:
+            operationId: requestPairingCode
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [phone_number]
+                            properties:
+                                phone_number:
+                                    type: string
+                                    description: >
+                                        International format, digits only after normalisation. Must be
+                                        longer than 6 digits and must not start with 0.
+            responses:
+                '200':
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                required: [code, phoneNumber, expiresAt]
+                                properties:
+                                    code: { type: string, pattern: '^[A-Z0-9]{4}-[A-Z0-9]{4}$' }
+                                    phoneNumber: { type: string }
+                                    expiresAt: { type: integer, format: int64 }
+                '409': { $ref: '#/components/responses/Error' }
+                '422': { $ref: '#/components/responses/Error' }
+
+    /sessions/{id}/messages:
+        parameters: [{ $ref: '#/components/parameters/SessionId' }]
+        post:
+            operationId: sendMessage
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [to, content]
+                            properties:
+                                to: { type: string, description: JID or phone number }
+                                content: { type: object, additionalProperties: true }
+                                options: { type: object, additionalProperties: true }
+            responses:
+                '200':
+                    description: Accepted by the send queue and dispatched
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                required: [id, to]
+                                properties:
+                                    id: { type: string }
+                                    to: { type: string, description: normalised JID }
+                '409': { $ref: '#/components/responses/Error' }
+                '503':
+                    description: Send queue is full
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Error' }
+
+    /events:
+        get:
+            operationId: streamEvents
+            summary: Server-sent event stream
+            parameters:
+                - name: session
+                  in: query
+                  schema: { type: string }
+                  description: Filter to one session id
+                - name: events
+                  in: query
+                  schema: { type: string }
+                  description: Comma-separated canonical event names
+            responses:
+                '200':
+                    description: text/event-stream; each `data:` frame is one event envelope
+                    content:
+                        text/event-stream:
+                            schema: { $ref: '#/components/schemas/EventEnvelope' }
+
+    /healthz:
+        get:
+            operationId: health
+            security: []
+            responses:
+                '200':
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                required: [status, specVersion, runtime]
+                                properties:
+                                    status: { type: string, enum: [ok] }
+                                    specVersion: { type: string }
+                                    runtime: { type: string, enum: [ts, go] }
+                                    instanceId: { type: string }
+                                    sessions: { type: integer }
+
+    /metrics:
+        get:
+            operationId: metrics
+            security: []
+            responses:
+                '200':
+                    description: Prometheus text exposition format
+                    content:
+                        text/plain: { schema: { type: string } }
+
+components:
+    securitySchemes:
+        bearerAuth: { type: http, scheme: bearer }
+
+    parameters:
+        SessionId:
+            name: id
+            in: path
+            required: true
+            schema: { type: string, pattern: '^[A-Za-z0-9_-]{1,64}$' }
+
+    responses:
+        SessionOk:
+            description: OK
+            content:
+                application/json:
+                    schema: { $ref: '#/components/schemas/Session' }
+        Error:
+            description: Error
+            content:
+                application/json:
+                    schema: { $ref: '#/components/schemas/Error' }
+
+    schemas:
+        Session:
+            type: object
+            required: [id, state, storage]
+            properties:
+                id: { type: string }
+                state: { type: string, description: see states.yaml }
+                storage: { type: string }
+                jid: { type: string, nullable: true }
+                createdAt: { type: integer, format: int64 }
+                updatedAt: { type: integer, format: int64 }
+
+        EventEnvelope:
+            type: object
+            required: [event, sessionId, ts, data]
+            properties:
+                event: { type: string, description: canonical name, see events.yaml }
+                sessionId: { type: string }
+                ts: { type: integer, format: int64 }
+                data: { type: object, additionalProperties: true }
+
+        Error:
+            type: object
+            required: [code, message]
+            properties:
+                code: { type: string, description: see errors.yaml }
+                message: { type: string }
+                sessionId: { type: string, nullable: true }

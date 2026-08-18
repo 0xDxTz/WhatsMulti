@@ -1,0 +1,58 @@
+# Canonical error codes. Identical string values in every runtime.
+# Generated into: src/generated/errors.ts (TS), errors_gen.go (Go)
+#
+# `code` is public API. Consumers branch on it; never on the message text.
+# `retryable` tells a caller whether repeating the identical call could succeed.
+
+errors:
+    - code: SESSION_NOT_FOUND
+      message: Session {sessionId} is not registered
+      retryable: false
+    - code: SESSION_EXISTS
+      message: Session {sessionId} already exists
+      retryable: false
+    - code: INVALID_SESSION_ID
+      message: 'Session id must match ^[A-Za-z0-9_-]{1,64}$'
+      retryable: false
+    - code: SESSION_NOT_READY
+      message: Session {sessionId} is {state}, expected one of {expected}
+      retryable: true
+    - code: SESSION_LOCKED
+      message: Session {sessionId} is held by instance {owner}
+      retryable: true
+    - code: SESSION_LOGGED_OUT
+      message: Session {sessionId} is logged out and must be paired again
+      retryable: false
+    - code: STORAGE_ERROR
+      message: Storage adapter {adapter} failed
+      retryable: true
+    - code: SEND_FAILED
+      message: Failed to send message on session {sessionId}
+      retryable: true
+    - code: TIMEOUT
+      message: Operation {operation} timed out after {timeoutMs}ms
+      retryable: true
+    - code: MISSING_PEER
+      message: '{feature} requires the optional peer dependency {peer}; install it with {install}'
+      retryable: false
+    - code: INVALID_CONFIG
+      message: 'Invalid config at {path}: {detail}'
+      retryable: false
+    - code: CLIENT_DESTROYED
+      message: Client has been destroyed
+      retryable: false
+    - code: PAIRING_UNAVAILABLE
+      message: Pairing code cannot be requested while session {sessionId} is {state}
+      retryable: true
+    - code: PAIRING_IN_PROGRESS
+      message: A pairing code is already pending for session {sessionId}
+      retryable: false
+    - code: INVALID_PHONE_NUMBER
+      message: 'Invalid phone number: {detail}'
+      retryable: false
+    - code: INVALID_JID
+      message: 'Cannot derive a JID from {input}'
+      retryable: false
+    - code: ILLEGAL_TRANSITION
+      message: Session {sessionId} cannot move from {from} via {trigger}
+      retryable: false

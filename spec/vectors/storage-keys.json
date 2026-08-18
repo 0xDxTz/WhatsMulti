@@ -1,0 +1,100 @@
+{
+  "specVersion": "0.1.0",
+  "description": "storageKey(sessionId, key) must equal `expected`. Decoding `expected` back must return the original key -- v1 used a lossy escape and collided pre-key-5 with pre:key:5.",
+  "signalKeyTypes": [
+    "pre-key",
+    "session",
+    "sender-key",
+    "sender-key-memory",
+    "app-state-sync-key",
+    "app-state-sync-version",
+    "lid-mapping",
+    "device-list",
+    "tctoken",
+    "identity-key"
+  ],
+  "reservedKeys": [
+    "creds",
+    "meta"
+  ],
+  "cases": [
+    {
+      "sessionId": "session-1",
+      "key": "creds",
+      "expected": "whatsmulti:session-1:creds",
+      "roundTrip": true
+    },
+    {
+      "sessionId": "session-1",
+      "key": "meta",
+      "expected": "whatsmulti:session-1:meta",
+      "roundTrip": true
+    },
+    {
+      "sessionId": "s_1",
+      "key": "pre-key-42",
+      "expected": "whatsmulti:s_1:pre-key-42",
+      "roundTrip": true
+    },
+    {
+      "sessionId": "s_1",
+      "key": "session-628123456789.0",
+      "expected": "whatsmulti:s_1:session-628123456789.0",
+      "roundTrip": true
+    },
+    {
+      "sessionId": "s_1",
+      "key": "sender-key-628123456789@s.whatsapp.net::628999@s.whatsapp.net",
+      "expected": "whatsmulti:s_1:sender-key-628123456789@s.whatsapp.net%3A%3A628999@s.whatsapp.net",
+      "roundTrip": true
+    },
+    {
+      "sessionId": "s_1",
+      "key": "app-state-sync-key-AAAAAB/c+d=",
+      "expected": "whatsmulti:s_1:app-state-sync-key-AAAAAB%2Fc+d=",
+      "roundTrip": true
+    },
+    {
+      "sessionId": "s_1",
+      "key": "app-state-sync-version-critical_block",
+      "expected": "whatsmulti:s_1:app-state-sync-version-critical_block",
+      "roundTrip": true
+    },
+    {
+      "sessionId": "s_1",
+      "key": "lid-mapping-628123456789",
+      "expected": "whatsmulti:s_1:lid-mapping-628123456789",
+      "roundTrip": true
+    },
+    {
+      "sessionId": "s_1",
+      "key": "device-list-628123456789",
+      "expected": "whatsmulti:s_1:device-list-628123456789",
+      "roundTrip": true
+    },
+    {
+      "sessionId": "s_1",
+      "key": "tctoken-628123456789@s.whatsapp.net",
+      "expected": "whatsmulti:s_1:tctoken-628123456789@s.whatsapp.net",
+      "roundTrip": true
+    },
+    {
+      "sessionId": "s_1",
+      "key": "identity-key-628123456789.0",
+      "expected": "whatsmulti:s_1:identity-key-628123456789.0",
+      "roundTrip": true
+    },
+    {
+      "sessionId": "s_1",
+      "key": "100%-of/the:reserved",
+      "expected": "whatsmulti:s_1:100%25-of%2Fthe%3Areserved",
+      "roundTrip": true
+    },
+    {
+      "sessionId": "A-Z_0-9",
+      "key": "pre-key-1",
+      "expected": "whatsmulti:A-Z_0-9:pre-key-1",
+      "roundTrip": true
+    }
+  ]
+}

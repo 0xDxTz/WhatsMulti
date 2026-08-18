@@ -1,0 +1,71 @@
+# Canonical configuration keys.
+#
+# Naming: snake_case on the wire (config files, env vars, REST bodies).
+# In code each runtime uses its own idiom -- camelCase in TypeScript,
+# PascalCase fields in Go -- but the wire name below is authoritative.
+#
+# Env var form: WHATSMULTI_<UPPER_SNAKE_PATH>, e.g. reconnect.cap_ms ->
+# WHATSMULTI_RECONNECT_CAP_MS.
+
+instance_id:
+    type: string
+    default: '<hostname>:<pid>:<random6>'
+    description: Identifies this process in lock values and event metadata.
+
+storage:
+    type: adapter
+    default: memory
+    description: >
+        Default storage for sessions created without an explicit override.
+        Shorthand strings `memory` and `file` are accepted; everything else is an
+        adapter instance.
+
+log_level:
+    type: enum
+    values: [silent, error, warn, info, debug, trace]
+    default: info
+
+driver_log_level:
+    type: enum
+    values: [silent, error, warn, info, debug, trace]
+    default: silent
+    description: Log level handed to Baileys / whatsmeow itself.
+
+reconnect:
+    enabled: { type: bool, default: true }
+    base_ms: { type: int, default: 1000, min: 100, description: first-attempt exponent base }
+    cap_ms: { type: int, default: 60000, min: 1000, description: ceiling for the exponential term }
+    floor_ms: { type: int, default: 250, min: 0, description: minimum delay after jitter }
+    max_attempts: { type: int, default: 0, min: 0, description: '0 means unlimited' }
+
+qr:
+    timeout_ms: { type: int, default: 60000, min: 5000, description: maps to Baileys `qrTimeout` }
+    max_attempts: { type: int, default: 5, min: 1, description: QR regenerations before giving up }
+    print: { type: bool, default: false, description: render to the log; needs the optional qr renderer }
+
+pairing:
+    enabled: { type: bool, default: false }
+    show_notification: { type: bool, default: true, description: whatsmeow PairPhone showPushNotification }
+    client_display_name:
+        { type: string, default: 'Chrome (Linux)', description: 'must be `Browser (OS)`; the server validates it' }
+
+send:
+    concurrency: { type: int, default: 1, min: 1, description: in-flight sends per session }
+    min_delay_ms: { type: int, default: 0, min: 0, description: enforced gap between sends }
+    timeout_ms: { type: int, default: 30000, min: 1000 }
+    max_queue: { type: int, default: 1000, min: 1, description: rejects with SEND_FAILED when full }
+
+lock:
+    enabled: { type: bool, default: true }
+    ttl_ms: { type: int, default: 30000, min: 5000 }
+    renew_ratio: { type: float, default: 0.33, description: renew after ttl_ms * renew_ratio }
+
+load:
+    concurrency: { type: int, default: 8, min: 1, description: bounded fan-out for loadSessions }
+    auto_start: { type: bool, default: false }
+
+session_id:
+    pattern: '^[A-Za-z0-9_-]{1,64}$'
+    description: >
+        Enforced identically in both runtimes. Deliberately excludes the separator and
+        percent characters so that storage keys need no session-id escaping.

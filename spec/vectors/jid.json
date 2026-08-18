@@ -1,0 +1,86 @@
+{
+  "specVersion": "0.1.0",
+  "description": "normalizeJid(input) must produce `jid`, or fail with `error`. The two phone rules mirror whatsmeow PairPhone validation so neither runtime accepts input the other rejects.",
+  "knownServers": [
+    "s.whatsapp.net",
+    "g.us",
+    "lid",
+    "broadcast",
+    "newsletter",
+    "call"
+  ],
+  "cases": [
+    {
+      "input": "628123456789",
+      "jid": "628123456789@s.whatsapp.net"
+    },
+    {
+      "input": "+62 812-3456-789",
+      "jid": "628123456789@s.whatsapp.net"
+    },
+    {
+      "input": "+1 (555) 010-9999",
+      "jid": "15550109999@s.whatsapp.net"
+    },
+    {
+      "input": "628123456789@s.whatsapp.net",
+      "jid": "628123456789@s.whatsapp.net"
+    },
+    {
+      "input": "628123456789:12@s.whatsapp.net",
+      "jid": "628123456789@s.whatsapp.net"
+    },
+    {
+      "input": "628123456789@S.WhatsApp.Net",
+      "jid": "628123456789@s.whatsapp.net"
+    },
+    {
+      "input": "120363000000000000@g.us",
+      "jid": "120363000000000000@g.us"
+    },
+    {
+      "input": "120363000000000000:5@g.us",
+      "jid": "120363000000000000@g.us"
+    },
+    {
+      "input": "98765432109876@lid",
+      "jid": "98765432109876@lid"
+    },
+    {
+      "input": "status@broadcast",
+      "jid": "status@broadcast"
+    },
+    {
+      "input": "0123456@newsletter",
+      "jid": "0123456@newsletter"
+    },
+    {
+      "input": "628123456789@call",
+      "jid": "628123456789@call"
+    },
+    {
+      "input": "0812345678",
+      "error": "INVALID_PHONE_NUMBER"
+    },
+    {
+      "input": "12345",
+      "error": "INVALID_PHONE_NUMBER"
+    },
+    {
+      "input": "+62-81",
+      "error": "INVALID_PHONE_NUMBER"
+    },
+    {
+      "input": "628123456789@example.com",
+      "error": "INVALID_JID"
+    },
+    {
+      "input": "@s.whatsapp.net",
+      "error": "INVALID_JID"
+    },
+    {
+      "input": "not a number",
+      "error": "INVALID_PHONE_NUMBER"
+    }
+  ]
+}

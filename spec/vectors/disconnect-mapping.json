@@ -1,0 +1,212 @@
+{
+  "specVersion": "0.1.0",
+  "description": "Given a driver signal, an implementation must resolve the canonical cause, its action, and whether credentials are purged. Message matching runs before the numeric map.",
+  "baileysStatus": [
+    {
+      "status": 401,
+      "cause": "logged_out",
+      "action": "terminal",
+      "purgeCreds": true
+    },
+    {
+      "status": 403,
+      "cause": "device_removed",
+      "action": "terminal",
+      "purgeCreds": true
+    },
+    {
+      "status": 408,
+      "cause": "timed_out",
+      "action": "reconnect_backoff",
+      "purgeCreds": false
+    },
+    {
+      "status": 411,
+      "cause": "multidevice_mismatch",
+      "action": "terminal",
+      "purgeCreds": true
+    },
+    {
+      "status": 428,
+      "cause": "connection_closed",
+      "action": "reconnect_backoff",
+      "purgeCreds": false
+    },
+    {
+      "status": 440,
+      "cause": "connection_replaced",
+      "action": "terminal",
+      "purgeCreds": false
+    },
+    {
+      "status": 500,
+      "cause": "server_error",
+      "action": "reconnect_backoff",
+      "purgeCreds": false
+    },
+    {
+      "status": 503,
+      "cause": "service_unavailable",
+      "action": "reconnect_backoff",
+      "purgeCreds": false
+    },
+    {
+      "status": 515,
+      "cause": "restart_required",
+      "action": "reconnect_immediate",
+      "purgeCreds": false
+    }
+  ],
+  "baileysMessage": [
+    {
+      "message": "Connection failure: bad session detected",
+      "cause": "bad_session",
+      "action": "terminal",
+      "purgeCreds": true
+    }
+  ],
+  "baileysUnknown": [
+    {
+      "status": 599,
+      "cause": "unknown",
+      "action": "reconnect_backoff",
+      "purgeCreds": false
+    },
+    {
+      "status": 0,
+      "cause": "unknown",
+      "action": "reconnect_backoff",
+      "purgeCreds": false
+    }
+  ],
+  "whatsmeowConnectFailure": [
+    {
+      "code": 400,
+      "cause": "unknown",
+      "action": "reconnect_backoff",
+      "purgeCreds": false
+    },
+    {
+      "code": 401,
+      "cause": "logged_out",
+      "action": "terminal",
+      "purgeCreds": true
+    },
+    {
+      "code": 402,
+      "cause": "temporary_ban",
+      "action": "terminal",
+      "purgeCreds": false
+    },
+    {
+      "code": 403,
+      "cause": "device_removed",
+      "action": "terminal",
+      "purgeCreds": true
+    },
+    {
+      "code": 405,
+      "cause": "client_outdated",
+      "action": "terminal",
+      "purgeCreds": false
+    },
+    {
+      "code": 406,
+      "cause": "banned",
+      "action": "terminal",
+      "purgeCreds": true
+    },
+    {
+      "code": 409,
+      "cause": "bad_user_agent",
+      "action": "terminal",
+      "purgeCreds": false
+    },
+    {
+      "code": 413,
+      "cause": "unknown",
+      "action": "reconnect_backoff",
+      "purgeCreds": false
+    },
+    {
+      "code": 414,
+      "cause": "unknown",
+      "action": "reconnect_backoff",
+      "purgeCreds": false
+    },
+    {
+      "code": 415,
+      "cause": "unknown",
+      "action": "reconnect_backoff",
+      "purgeCreds": false
+    },
+    {
+      "code": 418,
+      "cause": "unknown",
+      "action": "reconnect_backoff",
+      "purgeCreds": false
+    },
+    {
+      "code": 500,
+      "cause": "server_error",
+      "action": "reconnect_backoff",
+      "purgeCreds": false
+    },
+    {
+      "code": 501,
+      "cause": "unknown",
+      "action": "reconnect_backoff",
+      "purgeCreds": false
+    },
+    {
+      "code": 503,
+      "cause": "service_unavailable",
+      "action": "reconnect_backoff",
+      "purgeCreds": false
+    }
+  ],
+  "whatsmeowEvent": [
+    {
+      "event": "LoggedOut",
+      "cause": "logged_out",
+      "action": "terminal",
+      "purgeCreds": true
+    },
+    {
+      "event": "StreamReplaced",
+      "cause": "connection_replaced",
+      "action": "terminal",
+      "purgeCreds": false
+    },
+    {
+      "event": "TemporaryBan",
+      "cause": "temporary_ban",
+      "action": "terminal",
+      "purgeCreds": false
+    },
+    {
+      "event": "ClientOutdated",
+      "cause": "client_outdated",
+      "action": "terminal",
+      "purgeCreds": false
+    },
+    {
+      "event": "KeepAliveTimeout",
+      "cause": "timed_out",
+      "action": "reconnect_backoff",
+      "purgeCreds": false
+    },
+    {
+      "event": "QRScannedWithoutMultidevice",
+      "cause": "multidevice_mismatch",
+      "action": "terminal",
+      "purgeCreds": true
+    },
+    {
+      "event": "Disconnected",
+      "cause": "connection_lost",
+      "action": "reconnect_backoff",
+      "purgeCreds": false
+    }
+  ]
+}

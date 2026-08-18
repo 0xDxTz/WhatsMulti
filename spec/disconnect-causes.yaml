@@ -1,0 +1,184 @@
+# Canonical disconnect causes. Every driver-specific code maps into exactly one of
+# these, and each cause maps to exactly one action. This is the crux of TS/Go parity.
+# Generated into: src/generated/disconnect.ts (TS), disconnect_gen.go (Go)
+#
+# actions:
+#   reconnect_immediate  reconnect with no delay, does not consume a backoff attempt
+#   reconnect_backoff    reconnect after the backoff delay for the current attempt
+#   terminal             do not reconnect
+#
+# purge_creds: delete the stored auth state; the session moves to `logged_out`.
+#
+# Baileys reports disconnects as a numeric status code on a Boom error
+# (DisconnectReason). whatsmeow reports them as typed events plus
+# ConnectFailureReason codes. Note that Baileys assigns 408 to both
+# `connectionLost` and `timedOut`, so 408 is indistinguishable at runtime and maps
+# to `timed_out`.
+
+causes:
+    - name: restart_required
+      action: reconnect_immediate
+      purge_creds: false
+      description: The server asked the client to restart the stream. Expected after pairing.
+      baileys: { reason: restartRequired, status: 515 }
+      whatsmeow: { note: handled inside the driver's stream restart path }
+
+    - name: connection_closed
+      action: reconnect_backoff
+      purge_creds: false
+      description: The websocket closed without a more specific reason.
+      baileys: { reason: connectionClosed, status: 428 }
+      whatsmeow: { events: [Disconnected] }
+
+    - name: connection_lost
+      action: reconnect_backoff
+      purge_creds: false
+      description: The transport dropped. Not distinguishable from timed_out on Baileys.
+      baileys: { reason: connectionLost, status: 408, note: collides with timedOut }
+      whatsmeow: { events: [Disconnected] }
+
+    - name: timed_out
+      action: reconnect_backoff
+      purge_creds: false
+      description: Keep-alive or query timeout.
+      baileys: { reason: timedOut, status: 408 }
+      whatsmeow: { events: [KeepAliveTimeout] }
+
+    - name: service_unavailable
+      action: reconnect_backoff
+      purge_creds: false
+      description: WhatsApp is refusing connections temporarily.
+      baileys: { reason: unavailableService, status: 503 }
+      whatsmeow: { connect_failure: 503 }
+
+    - name: server_error
+      action: reconnect_backoff
+      purge_creds: false
+      description: Internal server error that is not a bad session.
+      baileys: { status: 500, note: only when the payload is not a badSession }
+      whatsmeow: { connect_failure: 500 }
+
+    - name: connection_replaced
+      action: terminal
+      purge_creds: false
+      description: Another client opened a stream for the same device. Do not fight it.
+      baileys: { reason: connectionReplaced, status: 440 }
+      whatsmeow: { events: [StreamReplaced] }
+
+    - name: logged_out
+      action: terminal
+      purge_creds: true
+      description: The device was unlinked from the phone.
+      baileys: { reason: loggedOut, status: 401 }
+      whatsmeow: { events: [LoggedOut], connect_failure: 401 }
+
+    - name: bad_session
+      action: terminal
+      purge_creds: true
+      description: The stored credentials are corrupt and cannot be recovered.
+      baileys: { reason: badSession, status: 500 }
+      whatsmeow: { note: no direct equivalent }
+
+    - name: multidevice_mismatch
+      action: terminal
+      purge_creds: true
+      description: The QR was scanned by a phone without multi-device enabled.
+      baileys: { reason: multideviceMismatch, status: 411 }
+      whatsmeow: { events: [QRScannedWithoutMultidevice] }
+
+    - name: device_removed
+      action: terminal
+      purge_creds: true
+      description: The primary device is gone, or this companion was removed.
+      baileys: { reason: forbidden, status: 403 }
+      whatsmeow: { connect_failure: 403, note: MainDeviceGone, called LOCKED in WA web }
+
+    - name: banned
+      action: terminal
+      purge_creds: true
+      description: The account is banned.
+      baileys: { note: no direct equivalent }
+      whatsmeow: { connect_failure: 406, note: UnknownLogout, called BANNED in WA web }
+
+    - name: temporary_ban
+      action: terminal
+      purge_creds: false
+      description: The account is temporarily restricted. Surface the expiry to the caller.
+      baileys: { note: no direct equivalent }
+      whatsmeow: { events: [TemporaryBan], connect_failure: 402 }
+
+    - name: client_outdated
+      action: terminal
+      purge_creds: false
+      description: The advertised client version is too old. Requires a driver upgrade.
+      baileys: { note: no direct equivalent }
+      whatsmeow: { events: [ClientOutdated], connect_failure: 405 }
+
+    - name: bad_user_agent
+      action: terminal
+      purge_creds: false
+      description: The browser/OS description was rejected by the server.
+      baileys: { note: no direct equivalent }
+      whatsmeow: { connect_failure: 409 }
+
+    - name: unknown
+      action: reconnect_backoff
+      purge_creds: false
+      description: Anything unrecognised. Reconnects, but the attempt cap still applies.
+      baileys: { note: fallback }
+      whatsmeow: { note: fallback }
+
+# ---------------------------------------------------------------------------
+# Authoritative numeric maps.
+#
+# The per-cause `baileys` / `whatsmeow` blocks above are documentation. These two
+# maps are what the generators compile, because two driver reasons can share one
+# numeric code and a lookup table must be single-valued.
+#
+# Collision 1 -- Baileys 408 is both `connectionLost` and `timedOut`. They are
+# indistinguishable at runtime and share an action, so 408 resolves to `timed_out`.
+#
+# Collision 2 -- Baileys 500 is both `badSession` and a plain server error.
+# 500 resolves to `server_error`, NOT `bad_session`, because `bad_session` purges
+# credentials: mapping a transient server error to it would delete a working session.
+# `bad_session` is instead detected from the error payload, and only then.
+baileys_status_map:
+    401: logged_out
+    403: device_removed
+    408: timed_out
+    411: multidevice_mismatch
+    428: connection_closed
+    440: connection_replaced
+    500: server_error
+    503: service_unavailable
+    515: restart_required
+
+# Detected from the disconnect error's message, checked before the numeric map.
+# Matching is case-insensitive substring.
+baileys_message_map:
+    'bad session': bad_session
+
+whatsmeow_connect_failure_map:
+    400: unknown
+    401: logged_out
+    402: temporary_ban
+    403: device_removed
+    405: client_outdated
+    406: banned
+    409: bad_user_agent
+    413: unknown
+    414: unknown
+    415: unknown
+    418: unknown
+    500: server_error
+    501: unknown
+    503: service_unavailable
+
+whatsmeow_event_map:
+    LoggedOut: logged_out
+    StreamReplaced: connection_replaced
+    TemporaryBan: temporary_ban
+    ClientOutdated: client_outdated
+    KeepAliveTimeout: timed_out
+    QRScannedWithoutMultidevice: multidevice_mismatch
+    Disconnected: connection_lost
