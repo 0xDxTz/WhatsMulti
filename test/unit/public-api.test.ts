@@ -7,6 +7,7 @@ import * as mongo from '../../src/adapters/mongo/index.js';
 import * as redis from '../../src/adapters/redis/index.js';
 import * as sqlAdapter from '../../src/adapters/sql/index.js';
 import * as qr from '../../src/qr/index.js';
+import * as webhookEntry from '../../src/webhook/index.js';
 import { ERROR_CODES, LIFECYCLE_EVENTS } from '../../src/generated/index.js';
 
 /**
@@ -217,5 +218,61 @@ describe('the adapter entry points', () => {
         expect(Object.keys(api)).not.toContain('mongoStorage');
         expect(Object.keys(api)).not.toContain('redisStorage');
         expect(Object.keys(api)).not.toContain('sqlStorage');
+    });
+});
+
+/**
+ * The forwarder. Its own subpath for the same reason as the adapters -- importing the
+ * package must not drag in anything that talks to the network -- and the verifier is
+ * exported beside the signer so a receiver can be written against this package alone.
+ */
+describe('the webhook entry point', () => {
+    it('exports the plugin, the queue, the envelope and the signature helpers', () => {
+        expect(Object.keys(webhookEntry).sort()).toEqual([
+            'DEFAULT_TOLERANCE_SECONDS',
+            'DEFAULT_WEBHOOK',
+            'DELIVERY_HEADER',
+            'DeliveryQueue',
+            'FORWARDABLE_EVENTS',
+            'INSTANCE_HEADER',
+            'SIGNATURE_HEADER',
+            'buildEnvelope',
+            'encodeEnvelope',
+            'isRetryableStatus',
+            'parseRetryAfter',
+            'parseSignatureHeader',
+            'signPayload',
+            'signedPayload',
+            'toWebhookEvents',
+            'verifySignature',
+            'webhook',
+            'wireName',
+        ]);
+    });
+
+    it('is published on the exports map', () => {
+        const manifest = JSON.parse(readFileSync('package.json', 'utf8')) as {
+            exports: Record<string, unknown>;
+        };
+        expect(manifest.exports['./webhook']).toEqual({
+            types: './dist/webhook/index.d.ts',
+            default: './dist/webhook/index.js',
+        });
+    });
+
+    it('rests on no peer at all', () => {
+        // It reaches the network through the global fetch. A forwarder that needed an
+        // HTTP client would be one more thing to keep in step with the Go build.
+        const manifest = JSON.parse(readFileSync('package.json', 'utf8')) as {
+            peerDependencies: Record<string, string>;
+            dependencies?: Record<string, string>;
+        };
+        expect(manifest.dependencies).toBeUndefined();
+        expect(Object.keys(manifest.peerDependencies)).not.toContain('undici');
+    });
+
+    it('stays out of the main entry point', () => {
+        expect(Object.keys(api)).not.toContain('webhook');
+        expect(Object.keys(api)).not.toContain('DeliveryQueue');
     });
 });

@@ -29,6 +29,10 @@
             "types": "./dist/adapters/sql/index.d.ts",
             "default": "./dist/adapters/sql/index.js"
         },
+        "./webhook": {
+            "types": "./dist/webhook/index.d.ts",
+            "default": "./dist/webhook/index.js"
+        },
         "./package.json": "./package.json"
     },
     "types": "./dist/index.d.ts",
