@@ -38,6 +38,13 @@ The v2 rewrite. Tracked phase by phase in `docs/REWRITE-v2-PLAN.md`.
   byte-compatible with Baileys' `BufferJSON`; unambiguous Signal key naming; and lazy
   driver loading, so importing the package does not pull Baileys into the module
   graph and a missing peer reports the install command.
+- Phase 4 session core: a state machine compiled from the spec, a disconnect policy
+  driven by the canonical cause table, full-jitter reconnect backoff verified against
+  the shared vectors, a socket factory that is also the test seam, the session itself
+  (QR lifecycle, pairing codes, logout separated from local delete), and a manager
+  with a namespace-derived registry, bounded loading and a real shutdown.
+- `LOGOUT_FAILED` and `SESSION_FAILED` error codes, and JID/phone normalisation
+  matching whatsmeow's PairPhone validation.
 - CI: spec-drift gate, Node 20/22/24 matrix, a Bun job, `publint` + `attw` package
   shape validation, and a daily job that runs the suite against the current Baileys
   release.
@@ -59,6 +66,23 @@ The v2 rewrite. Tracked phase by phase in `docs/REWRITE-v2-PLAN.md`.
   dist-tag instead of `latest`.
 
 ### Fixed
+
+- Reconnect covers every disconnect cause, with backoff and a credential purge on
+  logout. v1 reconnected only on `restartRequired`, immediately and forever, and never
+  purged -- so a device unlinked from the phone became an infinite reconnect loop
+  against credentials that could never work again.
+- Starting a session twice is refused by construction rather than by a check. v1
+  needed a dedicated commit to patch that race.
+- `deleteSession` no longer unlinks the device: local removal and logout are separate
+  operations, and a failed unlink keeps the credentials so it can be retried.
+- `qrTimeoutMs` and `maxQrAttempts` are read. v1 declared them in its types and never
+  used them.
+- `loadSessions` fans out with a bounded pool instead of an unbounded `Promise.all`.
+- Session listing is derived from the storage namespace, replacing a filesystem scan
+  whose Mongo counterpart used an async predicate inside `.filter()` and therefore
+  never filtered anything.
+- There is a shutdown path: `destroy()` stops every session and closes every adapter,
+  continuing past individual failures.
 
 - Signal keys are read and written in batches. v1 issued one storage round trip per
   key, and Baileys asks for thirty or more while resuming a session.

@@ -138,6 +138,58 @@ export {
 } from './auth/index.js';
 export type { AuthStateHandle, AuthStateOptions, EncodedBuffer, ParsedSignalKey } from './auth/index.js';
 
+// --- sessions ----------------------------------------------------------------------
+export {
+    Session,
+    SessionManager,
+    SessionMachine,
+    SessionRegistry,
+    ReconnectPolicy,
+    backoffDelay,
+    createSocket,
+    decideDisconnect,
+    decisionFor,
+    disconnectTrigger,
+    formatPairingCode,
+    isPairable,
+    isSendable,
+    isSessionState,
+    isTerminal,
+    nextState,
+    toDriverLogger,
+} from './session/index.js';
+export type {
+    BackoffConfig,
+    CreateSessionOptions,
+    DisconnectDecision,
+    ReconnectPlan,
+    ReconnectPolicyOptions,
+    ReconnectRefusal,
+    SessionManagerOptions,
+    SessionMachineOptions,
+    SessionMeta,
+    SessionOptions,
+    SocketFactory,
+    SocketFactoryOptions,
+    Transition,
+} from './session/index.js';
+
+// --- messaging ---------------------------------------------------------------------
+export {
+    DEFAULT_SERVER,
+    KNOWN_SERVERS,
+    isJid,
+    isKnownServer,
+    normalizeJid,
+    normalizePhoneNumber,
+    parseJid,
+} from './messaging/index.js';
+export type { KnownServer, ParsedJid } from './messaging/index.js';
+
+// --- utilities ---------------------------------------------------------------------
+export { mapLimit } from './utils/concurrency.js';
+export { createRandom, mulberry32, randomSeed } from './utils/random.js';
+
 // --- plugins ----------------------------------------------------------------------
 export { PluginRegistry, definePlugin } from './plugin.js';
 export type { Plugin, PluginContext, PluginEvents } from './plugin.js';
