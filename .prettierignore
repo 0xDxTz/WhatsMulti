@@ -4,9 +4,6 @@ coverage
 docs/api
 node_modules
 bun.lock
-
-# v1 source, kept for reference during the rewrite. Removed in phase 11.
-legacy
 landing
 
 # Generated. Formatting is owned by the generator so `gen:check` stays stable.
