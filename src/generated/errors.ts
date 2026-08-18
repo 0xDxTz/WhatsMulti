@@ -1,5 +1,5 @@
 // Code generated from spec/errors.yaml by scripts/generate.mjs. DO NOT EDIT.
-// Spec version: 0.1.0
+// Spec version: 0.2.0
 
 export const ERROR_CODES = [
     'SESSION_NOT_FOUND',
@@ -18,6 +18,7 @@ export const ERROR_CODES = [
     'PAIRING_IN_PROGRESS',
     'INVALID_PHONE_NUMBER',
     'INVALID_JID',
+    'LISTENER_FAILED',
     'ILLEGAL_TRANSITION',
 ] as const;
 
@@ -38,6 +39,7 @@ export type ErrorCode =
     | 'PAIRING_IN_PROGRESS'
     | 'INVALID_PHONE_NUMBER'
     | 'INVALID_JID'
+    | 'LISTENER_FAILED'
     | 'ILLEGAL_TRANSITION';
 
 /** Message templates. `{placeholder}` slots are filled by the error constructor. */
@@ -58,6 +60,7 @@ export const ERROR_MESSAGES: Readonly<Record<ErrorCode, string>> = {
     PAIRING_IN_PROGRESS: 'A pairing code is already pending for session {sessionId}',
     INVALID_PHONE_NUMBER: 'Invalid phone number: {detail}',
     INVALID_JID: 'Cannot derive a JID from {input}',
+    LISTENER_FAILED: 'An event listener for {event} failed: {detail}',
     ILLEGAL_TRANSITION: 'Session {sessionId} cannot move from {from} via {trigger}',
 };
 
@@ -79,5 +82,6 @@ export const ERROR_RETRYABLE: Readonly<Record<ErrorCode, boolean>> = {
     PAIRING_IN_PROGRESS: false,
     INVALID_PHONE_NUMBER: false,
     INVALID_JID: false,
+    LISTENER_FAILED: false,
     ILLEGAL_TRANSITION: false,
 };

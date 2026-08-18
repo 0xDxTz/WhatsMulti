@@ -53,6 +53,9 @@ errors:
     - code: INVALID_JID
       message: 'Cannot derive a JID from {input}'
       retryable: false
+    - code: LISTENER_FAILED
+      message: 'An event listener for {event} failed: {detail}'
+      retryable: false
     - code: ILLEGAL_TRANSITION
       message: Session {sessionId} cannot move from {from} via {trigger}
       retryable: false
