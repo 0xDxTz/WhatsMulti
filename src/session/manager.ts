@@ -5,7 +5,7 @@
  * module scope, so two clients in one process silently shared state -- including
  * their sessions.
  */
-import type { SocketConfig } from '../compat/baileys.js';
+import type { AnyMessageContent, MiscMessageGenerationOptions, SocketConfig, WAMessage } from '../compat/baileys.js';
 import { assertValidSessionId, type ResolvedConfig } from '../config.js';
 import { WhatsMultiError, describeError } from '../errors.js';
 import type { WMEventEmitter } from '../events/emitter.js';
@@ -150,6 +150,16 @@ export class SessionManager {
         const session = this.get(sessionId);
         await session.stop();
         await session.start();
+    }
+
+    /** Queues a message on one session. Thin by design: the queueing lives there. */
+    async send(
+        sessionId: string,
+        to: string,
+        content: AnyMessageContent,
+        options?: MiscMessageGenerationOptions
+    ): Promise<WAMessage> {
+        return this.get(sessionId).send(to, content, options);
     }
 
     /** Unlinks the device, drops the local data, and deregisters the session. */

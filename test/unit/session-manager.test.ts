@@ -163,6 +163,27 @@ describe('SessionManager lifecycle delegation', () => {
     });
 });
 
+describe('SessionManager.send', () => {
+    it('delegates to the session', async () => {
+        const h = harness();
+        await h.manager.create('a', { autoStart: true });
+        await h.driver.last.open();
+
+        const sent = await h.manager.send('a', '628123456789', { text: 'hi' });
+
+        expect(sent.key.id).toBe('MSG1');
+        expect(h.driver.last.sent).toEqual([['628123456789@s.whatsapp.net', { text: 'hi' }]]);
+    });
+
+    it('reports an unknown session rather than sending nowhere', async () => {
+        const h = harness();
+
+        await expect(h.manager.send('nope', '628123456789', { text: 'hi' })).rejects.toMatchObject({
+            code: 'SESSION_NOT_FOUND',
+        });
+    });
+});
+
 describe('SessionManager.remove', () => {
     it('deletes local data and deregisters, leaving the device linked', async () => {
         const h = harness();

@@ -9,3 +9,6 @@ export {
     type KnownServer,
     type ParsedJid,
 } from './jid.js';
+export { SendQueue, type SendQueueOptions } from './queue.js';
+export { sendMessage, type SendRequest } from './send.js';
+export { downloadMedia, downloadMediaStream, type DownloadRequest } from './media.js';

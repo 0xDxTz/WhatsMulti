@@ -98,13 +98,18 @@ describe('public surface', () => {
         // messaging
         'DEFAULT_SERVER',
         'KNOWN_SERVERS',
+        'SendQueue',
+        'downloadMedia',
+        'downloadMediaStream',
         'isJid',
         'isKnownServer',
         'normalizeJid',
         'normalizePhoneNumber',
         'parseJid',
+        'sendMessage',
         // utilities
         'mapLimit',
+        'withTimeout',
         'createRandom',
         'mulberry32',
         'randomSeed',

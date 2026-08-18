@@ -177,16 +177,21 @@ export type {
 export {
     DEFAULT_SERVER,
     KNOWN_SERVERS,
+    SendQueue,
+    downloadMedia,
+    downloadMediaStream,
     isJid,
     isKnownServer,
     normalizeJid,
     normalizePhoneNumber,
     parseJid,
+    sendMessage,
 } from './messaging/index.js';
-export type { KnownServer, ParsedJid } from './messaging/index.js';
+export type { DownloadRequest, KnownServer, ParsedJid, SendQueueOptions, SendRequest } from './messaging/index.js';
 
 // --- utilities ---------------------------------------------------------------------
 export { mapLimit } from './utils/concurrency.js';
+export { withTimeout, type TimeoutOptions } from './utils/timeout.js';
 export { createRandom, mulberry32, randomSeed } from './utils/random.js';
 
 // --- plugins ----------------------------------------------------------------------

@@ -43,7 +43,11 @@ The v2 rewrite. Tracked phase by phase in `docs/REWRITE-v2-PLAN.md`.
   the shared vectors, a socket factory that is also the test seam, the session itself
   (QR lifecycle, pairing codes, logout separated from local delete), and a manager
   with a namespace-derived registry, bounded loading and a real shutdown.
-- `LOGOUT_FAILED` and `SESSION_FAILED` error codes, and JID/phone normalisation
+- Phase 5 messaging: a bounded, rate-limited per-session send queue, a send path with
+  a deadline and typed failures, and a media downloader that can refresh an expired
+  media URL instead of failing permanently.
+- `LOGOUT_FAILED`, `SESSION_FAILED` and `MEDIA_DOWNLOAD_FAILED` error codes, a
+  `{detail}` slot on `SEND_FAILED`, and JID/phone normalisation
   matching whatsmeow's PairPhone validation.
 - CI: spec-drift gate, Node 20/22/24 matrix, a Bun job, `publint` + `attw` package
   shape validation, and a daily job that runs the suite against the current Baileys
@@ -81,6 +85,13 @@ The v2 rewrite. Tracked phase by phase in `docs/REWRITE-v2-PLAN.md`.
 - Session listing is derived from the storage namespace, replacing a filesystem scan
   whose Mongo counterpart used an async predicate inside `.filter()` and therefore
   never filtered anything.
+- Sends are serialised per session. Two in flight at once mutate the same Signal
+  session state concurrently, and the loser produces a message the recipient cannot
+  decrypt. v1 sent straight from the caller's stack, with no queue and no rate limit.
+- The send queue is bounded and refuses work when full, instead of growing until the
+  process runs out of memory while the caller sees nothing wrong.
+- Media downloads pass a re-upload request to the driver, so an expired media URL is
+  refreshed rather than becoming a permanent failure.
 - There is a shutdown path: `destroy()` stops every session and closes every adapter,
   continuing past individual failures.
 
