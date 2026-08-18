@@ -93,6 +93,31 @@ export type {
     SessionStateEvent,
 } from './events/index.js';
 
+// --- storage ----------------------------------------------------------------------
+export {
+    memoryStorage,
+    fileStorage,
+    resolveStorage,
+    DEFAULT_STORAGE_PATH,
+    NAMESPACE,
+    SEPARATOR,
+    encodeKey,
+    decodeKey,
+    sessionPrefix,
+    namespacePrefix,
+    storageKey,
+    parseStorageKey,
+    requireStorageKey,
+} from './storage/index.js';
+export type {
+    StorageAdapter,
+    StorageInput,
+    StorageValue,
+    MemoryStorageOptions,
+    FileStorageOptions,
+    ParsedStorageKey,
+} from './storage/index.js';
+
 // --- plugins ----------------------------------------------------------------------
 export { PluginRegistry, definePlugin } from './plugin.js';
 export type { Plugin, PluginContext, PluginEvents } from './plugin.js';

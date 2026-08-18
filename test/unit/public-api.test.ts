@@ -47,6 +47,20 @@ describe('public surface', () => {
         'assertValidSessionId',
         'DEFAULT_CONFIG',
         'SESSION_ID_PATTERN',
+        // storage
+        'memoryStorage',
+        'fileStorage',
+        'resolveStorage',
+        'DEFAULT_STORAGE_PATH',
+        'NAMESPACE',
+        'SEPARATOR',
+        'encodeKey',
+        'decodeKey',
+        'sessionPrefix',
+        'namespacePrefix',
+        'storageKey',
+        'parseStorageKey',
+        'requireStorageKey',
         // events
         'WMEventEmitter',
         // plugins

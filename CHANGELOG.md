@@ -30,6 +30,9 @@ The v2 rewrite. Tracked phase by phase in `docs/REWRITE-v2-PLAN.md`.
   `Logger` interface with a zero-dependency default, validated and frozen
   configuration, a typed event bus, a plugin registry, and `src/compat/baileys.ts`
   as the single Baileys touch point.
+- Phase 2 storage: a single `StorageAdapter` contract with required batch access, a
+  namespaced and exactly-invertible key layout, in-memory and filesystem backends,
+  and a shared conformance suite that every adapter must pass.
 - CI: spec-drift gate, Node 20/22/24 matrix, a Bun job, `publint` + `attw` package
   shape validation, and a daily job that runs the suite against the current Baileys
   release.
