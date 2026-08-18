@@ -1,6 +1,6 @@
 {
     "name": "@dutakey/whatsmulti",
-    "version": "2.0.0-rc.0",
+    "version": "2.0.0-rc.1",
     "description": "Multi-session WhatsApp orchestration for Node.js, built on Baileys",
     "author": "DutaKey",
     "license": "MIT",
@@ -44,6 +44,7 @@
     "files": [
         "dist",
         "README.md",
+        "MIGRATION.md",
         "CHANGELOG.md",
         "LICENSE"
     ],

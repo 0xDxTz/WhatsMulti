@@ -10,7 +10,14 @@ Versions are set by hand. `semantic-release` was removed in v2 — see
 
 ## [Unreleased]
 
-The v2 rewrite. Tracked phase by phase in `docs/REWRITE-v2-PLAN.md`.
+## [2.0.0-rc.1] - 2026-08-18
+
+The v2 rewrite, complete. Built phase by phase against `docs/REWRITE-v2-PLAN.md`.
+
+A release candidate rather than a stable release, and it stays one until Baileys 7
+ships stable or we have run an RC in production for long enough to vouch for it.
+Published under the `next` dist-tag, so `npm install @dutakey/whatsmulti` keeps
+resolving to v1 until that happens.
 
 ### Added
 
@@ -65,9 +72,31 @@ The v2 rewrite. Tracked phase by phase in `docs/REWRITE-v2-PLAN.md`.
 - `LOGOUT_FAILED`, `SESSION_FAILED` and `MEDIA_DOWNLOAD_FAILED` error codes, a
   `{detail}` slot on `SEND_FAILED`, and JID/phone normalisation
   matching whatsmeow's PairPhone validation.
+- Phase 9 webhook: `@dutakey/whatsmulti/webhook`, an HMAC-SHA256 signed event
+  forwarder with a batching window, a bounded queue, dead-lettering and retries on the
+  same full-jitter schedule as reconnects. Deliveries are posted one at a time and in
+  order — parallel posts with independent retries would routinely show a receiver
+  `session.state open` before the `qr` that preceded it — and a retry re-sends
+  identical bytes under the original timestamp, so a receiver can verify and
+  deduplicate. The envelope, the signing recipe and the verification steps are
+  specified in `spec/webhook.md`.
+- Phase 10 server: `@dutakey/whatsmulti/server`, a REST + SSE control plane on Hono
+  behind bearer authentication, with `/healthz` and Prometheus `/metrics`. Serving
+  without a token takes an explicit `insecure: true`, and passing both is refused
+  rather than resolved. The HTTP status per error code lives in `spec/errors.yaml`
+  rather than in the server, so an API client branching on 409 versus 422 never has to
+  ask which runtime it is talking to. Contract tests validate real responses against
+  `spec/openapi.yaml`.
+- `spec/metrics.md` — the metric names and label rules, so a dashboard built against
+  one runtime does not break on the other.
+- `INVALID_REQUEST`, `UNAUTHORIZED`, `ROUTE_NOT_FOUND` and `INTERNAL_ERROR` error
+  codes, and an `http` status on every code.
+- `MIGRATION.md`, a rewritten README, seven runnable examples under `examples/`, and a
+  typedoc API reference (`npm run docs`). The examples are type checked in CI: an
+  example that no longer compiles is a documentation bug.
 - CI: spec-drift gate, Node 20/22/24 matrix, a Bun job, `publint` + `attw` package
-  shape validation, and a daily job that runs the suite against the current Baileys
-  release.
+  shape validation, a typedoc validation run, and a daily job that runs the suite
+  against the current Baileys release.
 
 ### Changed
 
@@ -124,8 +153,8 @@ The v2 rewrite. Tracked phase by phase in `docs/REWRITE-v2-PLAN.md`.
 ### Removed
 
 - `semantic-release` and `release.config.cjs`.
+- v1 source under `legacy/`. It was kept through the rewrite so each phase could be
+  checked against what v1 actually did; `git log` holds it from here.
 
-### Notes
-
-- v1 source is preserved under `legacy/` for reference during the port and is removed
-  in phase 11.
+[unreleased]: https://github.com/0xDxTz/WhatsMulti/compare/v2.0.0-rc.1...HEAD
+[2.0.0-rc.1]: https://github.com/0xDxTz/WhatsMulti/releases/tag/v2.0.0-rc.1
