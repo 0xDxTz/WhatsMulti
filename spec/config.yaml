@@ -41,7 +41,7 @@ reconnect:
 qr:
     timeout_ms: { type: int, default: 60000, min: 5000, description: maps to Baileys `qrTimeout` }
     max_attempts: { type: int, default: 5, min: 1, description: QR regenerations before giving up }
-    print: { type: bool, default: false, description: render to the log; needs the optional qr renderer }
+    print: { type: bool, default: false, description: print the QR to stdout; needs the optional qrcode peer }
 
 pairing:
     enabled: { type: bool, default: false }

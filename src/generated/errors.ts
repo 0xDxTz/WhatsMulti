@@ -1,5 +1,5 @@
 // Code generated from spec/errors.yaml by scripts/generate.mjs. DO NOT EDIT.
-// Spec version: 0.2.6
+// Spec version: 0.2.7
 
 export const ERROR_CODES = [
     'SESSION_NOT_FOUND',
