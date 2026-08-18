@@ -24,7 +24,7 @@ errors:
       message: Session {sessionId} is logged out and must be paired again
       retryable: false
     - code: STORAGE_ERROR
-      message: Storage adapter {adapter} failed
+      message: 'Storage adapter {adapter} failed: {detail}'
       retryable: true
     - code: SEND_FAILED
       message: Failed to send message on session {sessionId}

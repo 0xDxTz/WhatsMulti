@@ -1,4 +1,4 @@
 // Code generated from spec/VERSION by scripts/generate.mjs. DO NOT EDIT.
-// Spec version: 0.2.0
+// Spec version: 0.2.1
 
-export const SPEC_VERSION = '0.2.0';
+export const SPEC_VERSION = '0.2.1';

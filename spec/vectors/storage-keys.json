@@ -1,5 +1,5 @@
 {
-  "specVersion": "0.2.0",
+  "specVersion": "0.2.1",
   "description": "storageKey(sessionId, key) must equal `expected`. Decoding `expected` back must return the original key -- v1 used a lossy escape and collided pre-key-5 with pre:key:5.",
   "signalKeyTypes": [
     "pre-key",

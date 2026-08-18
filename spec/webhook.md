@@ -17,7 +17,7 @@ X-WhatsMulti-Signature: t=<unix-seconds>,v1=<hex hmac-sha256>
 
 ```jsonc
 {
-    "specVersion": "0.2.0",
+    "specVersion": "0.2.1",
     "instanceId": "host:1234:a1b2c3",
     "events": [
         {
