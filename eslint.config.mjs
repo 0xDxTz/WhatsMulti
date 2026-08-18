@@ -13,26 +13,43 @@ import tseslint from 'typescript-eslint';
  * Without this rule the layering is a convention, and conventions rot. v1's
  * module-global stores are what happens when nothing enforces direction.
  */
-const layers = {
+export const LAYERS = {
     'src/storage/**': ['session', 'messaging', 'events', 'auth', 'plugin', 'client', 'compat'],
     'src/auth/**': ['session', 'messaging', 'plugin', 'client'],
     'src/events/**': ['session', 'storage', 'auth', 'messaging', 'client'],
     'src/messaging/**': ['client', 'storage'],
     'src/utils/**': ['session', 'storage', 'auth', 'messaging', 'events', 'plugin', 'client', 'compat'],
-    'src/generated/**': ['session', 'storage', 'auth', 'messaging', 'events', 'plugin', 'client', 'compat', 'utils'],
 };
 
-const layerConfigs = Object.entries(layers).map(([files, forbidden]) => ({
+/**
+ * Generated files are pure constants compiled from spec/ and import nothing outside
+ * their own directory -- that self-containment is what makes them safe to regenerate.
+ * Expressed as a path restriction rather than a layer list so that the barrel can
+ * still re-export its own siblings.
+ */
+const GENERATED_CONFIG = {
+    files: ['src/generated/**'],
+    rules: {
+        'no-restricted-imports': ['error', { patterns: ['../*', '../**'] }],
+    },
+};
+
+export const layerConfigs = Object.entries(LAYERS).map(([files, forbidden]) => ({
     files: [files],
     rules: {
         'no-restricted-imports': [
             'error',
             {
-                patterns: forbidden.flatMap((dir) => [`**/${dir}`, `**/${dir}/**`]),
+                // Imports carry an explicit .js extension under nodenext, so a bare
+                // `**/plugin` pattern silently matches nothing. test/unit/layering
+                // asserts these actually fire.
+                patterns: forbidden.flatMap((dir) => [`**/${dir}`, `**/${dir}.js`, `**/${dir}/**`, `**/${dir}/*.js`]),
             },
         ],
     },
 }));
+
+layerConfigs.push(GENERATED_CONFIG);
 
 export default tseslint.config(
     {
@@ -54,11 +71,16 @@ export default tseslint.config(
             '@typescript-eslint/switch-exhaustiveness-check': 'error',
             eqeqeq: ['error', 'always'],
             'no-console': 'error',
+
+            // An adapter method that satisfies a Promise-returning contract without
+            // awaiting anything is correct, not a mistake: declaring it async is what
+            // turns a synchronous throw into a rejection the caller can catch.
+            '@typescript-eslint/require-await': 'off',
         },
     },
     ...layerConfigs,
     {
-        // Generated files are rewritten by scripts/generate.mjs; never hand-edited.
+        // Rewritten by scripts/generate.mjs; never hand-edited.
         files: ['src/generated/**'],
         rules: { '@typescript-eslint/no-redundant-type-constituents': 'off' },
     },
