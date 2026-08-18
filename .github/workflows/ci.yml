@@ -1,0 +1,138 @@
+name: CI
+
+on:
+    push:
+        branches: [main, v2]
+    pull_request:
+
+concurrency:
+    group: ci-${{ github.ref }}
+    cancel-in-progress: true
+
+permissions:
+    contents: read
+
+jobs:
+    spec:
+        name: Spec integrity
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+              with:
+                  fetch-depth: 0
+
+            - uses: actions/setup-node@v6
+              with:
+                  node-version: 22
+                  cache: npm
+
+            - run: npm ci
+
+            # Generated code must match spec/. A hand-edit here would silently
+            # redefine the contract the Go implementation is held to.
+            - name: Generated code is up to date
+              run: npm run gen:check
+
+            # Any change under spec/ requires a spec/VERSION bump. Vectors are
+            # deliberately never regenerated in CI.
+            - name: spec/VERSION bumped when spec changed
+              if: github.event_name == 'pull_request'
+              run: |
+                  base="origin/${{ github.base_ref }}"
+                  git fetch --no-tags --depth=1 origin "${{ github.base_ref }}"
+                  if git diff --quiet "$base" -- spec/; then
+                    echo "spec/ unchanged"
+                    exit 0
+                  fi
+                  if git diff --quiet "$base" -- spec/VERSION; then
+                    echo "::error::spec/ changed but spec/VERSION was not bumped"
+                    exit 1
+                  fi
+                  echo "spec/VERSION bumped"
+
+    check:
+        name: Node ${{ matrix.node }}
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                node: [20, 22, 24]
+        steps:
+            - uses: actions/checkout@v5
+
+            - uses: actions/setup-node@v6
+              with:
+                  node-version: ${{ matrix.node }}
+                  cache: npm
+
+            - run: npm ci
+            - run: npm run lint
+            - run: npm run typecheck
+            - run: npm run test
+            - run: npm run build
+
+    bun:
+        name: Bun
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+            - uses: oven-sh/setup-bun@v2
+            - run: bun install --frozen-lockfile
+            - run: bun run typecheck
+            - run: bunx vitest run
+
+    package:
+        name: Package shape
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+
+            - uses: actions/setup-node@v6
+              with:
+                  node-version: 22
+                  cache: npm
+
+            - run: npm ci
+            - run: npm run build
+
+            # publint catches a malformed exports map; attw catches the type
+            # resolution problems that only surface for consumers.
+            #
+            # cjs-resolves-to-esm is ignored on purpose: v2 is ESM-only, so a CJS
+            # consumer reaching dynamic-import-only is the documented outcome, not a
+            # packaging defect.
+            - run: npx publint
+            - run: npx attw --pack . --ignore-rules cjs-resolves-to-esm
+
+    coverage:
+        name: Coverage
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+
+            - uses: actions/setup-node@v6
+              with:
+                  node-version: 22
+                  cache: npm
+
+            - run: npm ci
+            - run: npm run coverage
+
+            - uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: coverage
+                  path: coverage/
+                  retention-days: 7
+
+    format:
+        name: Format
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+            - uses: actions/setup-node@v6
+              with:
+                  node-version: 22
+                  cache: npm
+            - run: npm ci
+            - run: npm run format:check

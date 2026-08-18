@@ -1,0 +1,63 @@
+name: Baileys drift
+
+# We track the Baileys 7.0.0-rc line, which can break between release candidates.
+# This job surfaces that as a red build within a day instead of as a user bug report.
+# Everything Baileys-specific funnels through src/compat/baileys.ts, so the fix is
+# normally a one-file diff.
+
+on:
+    schedule:
+        - cron: '0 4 * * *'
+    workflow_dispatch:
+
+permissions:
+    contents: read
+    issues: write
+
+jobs:
+    drift:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+
+            - uses: actions/setup-node@v6
+              with:
+                  node-version: 22
+                  cache: npm
+
+            - run: npm ci
+
+            - name: Install the current Baileys release
+              id: install
+              run: |
+                  npm install --no-save @whiskeysockets/baileys@latest
+                  echo "version=$(node -p "require('@whiskeysockets/baileys/package.json').version")" >> "$GITHUB_OUTPUT"
+
+            - id: suite
+              continue-on-error: true
+              run: npm run typecheck && npm run test
+
+            - name: Open an issue on failure
+              if: steps.suite.outcome == 'failure'
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  VERSION: ${{ steps.install.outputs.version }}
+              run: |
+                  title="Baileys drift: suite fails against $VERSION"
+                  if gh issue list --state open --search "$title in:title" --json number --jq 'length' | grep -qv '^0$'; then
+                    echo "issue already open"
+                    exit 0
+                  fi
+                  gh issue create --title "$title" \
+                    --label dependencies \
+                    --body "The scheduled drift check failed against \`@whiskeysockets/baileys@$VERSION\`.
+
+                  Pinned version: \`$(node -p "require('./package.json').devDependencies['@whiskeysockets/baileys']")\`
+
+                  Start at \`src/compat/baileys.ts\` — every Baileys touch point goes through it.
+
+                  Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+            - name: Fail the job if the suite failed
+              if: steps.suite.outcome == 'failure'
+              run: exit 1

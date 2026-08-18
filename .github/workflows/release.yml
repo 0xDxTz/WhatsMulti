@@ -1,38 +1,97 @@
 name: Release
 
+# Manual versioning. semantic-release was removed in v2: WhatsMulti now ships in two
+# ecosystems, and Go modules are versioned by git tag with no equivalent tool. One
+# release philosophy for both repos means npm versions and Go tags cannot drift.
+#
+# To release:
+#   1. bump "version" in package.json
+#   2. write the CHANGELOG.md entry
+#   3. git tag v2.0.0 && git push --tags
+
 on:
     push:
-        branches:
-            - main
+        tags: ['v*']
+    workflow_dispatch:
+        inputs:
+            dry_run:
+                description: Build and verify without publishing
+                type: boolean
+                default: true
 
 permissions:
     contents: write
-    issues: write
-    pull-requests: write
+    id-token: write
 
 jobs:
     release:
         runs-on: ubuntu-latest
         steps:
-            - name: Checkout code
-              uses: actions/checkout@v2
+            - uses: actions/checkout@v5
 
-            - name: Set up Node.js
-              uses: actions/setup-node@v4
+            - uses: actions/setup-node@v6
               with:
-                  node-version: 'lts/*'
+                  node-version: 22
+                  cache: npm
+                  registry-url: https://registry.npmjs.org
 
-            - name: Install dependencies
-              run: npm install
+            - run: npm ci
 
-            - name: Build package
-              run: npm run build
+            # The one check that makes manual versioning safe.
+            - name: Tag matches package.json version
+              if: startsWith(github.ref, 'refs/tags/')
+              run: |
+                  tag="${GITHUB_REF_NAME#v}"
+                  pkg="$(node -p "require('./package.json').version")"
+                  if [ "$tag" != "$pkg" ]; then
+                    echo "::error::tag v$tag does not match package.json version $pkg"
+                    exit 1
+                  fi
+                  echo "version $pkg"
 
-            - name: Run audit
-              run: npm audit signatures
+            - name: Changelog has an entry for this version
+              if: startsWith(github.ref, 'refs/tags/')
+              run: |
+                  pkg="$(node -p "require('./package.json').version")"
+                  if ! grep -q "^## \[\?$pkg\]\?" CHANGELOG.md; then
+                    echo "::error::CHANGELOG.md has no entry for $pkg"
+                    exit 1
+                  fi
 
-            - name: Release
+            - run: npm run gen:check
+            - run: npm run lint
+            - run: npm run typecheck
+            - run: npm run test
+            - run: npm run build
+            - run: npx publint
+            - run: npx attw --pack . --ignore-rules cjs-resolves-to-esm
+
+            # A prerelease must never claim the `latest` dist-tag; that would push an
+            # RC to every `npm install @dutakey/whatsmulti`. Relevant for as long as
+            # we track the Baileys 7.0.0-rc line.
+            - name: Resolve dist-tag
+              id: disttag
+              run: |
+                  pkg="$(node -p "require('./package.json').version")"
+                  case "$pkg" in
+                    *-*) echo "tag=next" >> "$GITHUB_OUTPUT" ;;
+                    *)   echo "tag=latest" >> "$GITHUB_OUTPUT" ;;
+                  esac
+
+            - name: Publish
+              if: startsWith(github.ref, 'refs/tags/') && !inputs.dry_run
+              run: npm publish --provenance --access public --tag ${{ steps.disttag.outputs.tag }}
               env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-              run: npx semantic-release
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+            - name: GitHub Release
+              if: startsWith(github.ref, 'refs/tags/') && !inputs.dry_run
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  prerelease=""
+                  case "${GITHUB_REF_NAME}" in *-*) prerelease="--prerelease" ;; esac
+                  gh release create "$GITHUB_REF_NAME" \
+                    --title "$GITHUB_REF_NAME" \
+                    --notes-file <(awk "/^## \[?${GITHUB_REF_NAME#v}\]?/{f=1;next} /^## /{f=0} f" CHANGELOG.md) \
+                    $prerelease
