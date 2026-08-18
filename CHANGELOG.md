@@ -50,6 +50,11 @@ The v2 rewrite. Tracked phase by phase in `docs/REWRITE-v2-PLAN.md`.
   bus, plugin registry and session manager — plus `@dutakey/whatsmulti/qr`, a second
   entry point that renders a QR to the terminal, SVG or PNG behind the optional
   `qrcode` peer. Baileys 7 removed `printQRInTerminal`; `qr.print` replaces it.
+- Phase 7 cluster: a `LockProvider` contract whose row shape is the one in
+  `spec/storage-schema.sql`, so a Go instance and a TypeScript instance sharing a
+  database fence each other; an in-process provider as the default; and fail-stop
+  fencing in `Session` — the lock is taken before the socket opens, renewed on a
+  heartbeat, and losing it closes the socket at once and emits `session.fenced`.
 - `LOGOUT_FAILED`, `SESSION_FAILED` and `MEDIA_DOWNLOAD_FAILED` error codes, a
   `{detail}` slot on `SEND_FAILED`, and JID/phone normalisation
   matching whatsmeow's PairPhone validation.

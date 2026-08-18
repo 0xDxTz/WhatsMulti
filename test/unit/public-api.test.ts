@@ -98,7 +98,9 @@ describe('public surface', () => {
         'isSendable',
         'isSessionState',
         'isTerminal',
+        'memoryLock',
         'nextState',
+        'sessionLockKey',
         'toDriverLogger',
         // messaging
         'DEFAULT_SERVER',
