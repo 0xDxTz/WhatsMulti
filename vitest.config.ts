@@ -5,7 +5,12 @@ import { defineConfig } from 'vitest/config';
  * Parity-critical modules carry no coverage slack. The threshold activates the moment
  * the file lands, so it cannot be forgotten during the phased rewrite.
  */
-const strict = ['src/session/state.ts', 'src/session/disconnect.ts', 'src/session/reconnect.ts'];
+const strict = [
+    'src/session/state.ts',
+    'src/session/disconnect.ts',
+    'src/session/reconnect.ts',
+    'src/utils/backoff.ts',
+];
 const full = { lines: 100, functions: 100, branches: 100, statements: 100 };
 
 export default defineConfig({

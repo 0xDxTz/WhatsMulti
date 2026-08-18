@@ -4,7 +4,8 @@ import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_CONFIG, type ReconnectConfig } from '../../src/config.js';
 import { DISCONNECT_ACTIONS, DISCONNECT_CAUSES } from '../../src/generated/index.js';
-import { ReconnectPolicy, backoffDelay } from '../../src/session/reconnect.js';
+import { ReconnectPolicy } from '../../src/session/reconnect.js';
+import { backoffDelay } from '../../src/utils/backoff.js';
 import { mulberry32, createRandom, randomSeed } from '../../src/utils/random.js';
 
 const vectors = JSON.parse(readFileSync('spec/vectors/backoff.json', 'utf8')) as {

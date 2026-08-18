@@ -1,40 +1,19 @@
 /**
- * Reconnect policy: exponential backoff with full jitter and a floor, normative in
- * spec/algorithms.md section 2 and pinned by spec/vectors/backoff.json.
+ * Reconnect policy: which disconnects are worth retrying, and when.
  *
- * Full jitter -- a delay drawn uniformly from the whole window rather than the top of
- * it -- is what stops a fleet of sessions that dropped together from reconnecting
- * together. The floor keeps the first retries from hammering a server that is merely
- * slow.
+ * The schedule itself is `backoffDelay` in utils -- exponential with full jitter, the
+ * same arithmetic the webhook forwarder retries on. What lives here is the policy:
+ * a terminal cause is never retried, an immediate cause costs no attempt, and a
+ * finite `maxAttempts` is exhaustible.
  *
  * v1 had none of this: one cause reconnected, immediately, forever.
  */
 import type { ReconnectConfig } from '../config.js';
 import type { DisconnectCause } from '../generated/index.js';
+import { backoffDelay } from '../utils/backoff.js';
 import { createRandom } from '../utils/random.js';
 
 import { decisionFor } from './disconnect.js';
-
-export interface BackoffConfig {
-    readonly baseMs: number;
-    readonly capMs: number;
-    readonly floorMs: number;
-}
-
-/**
- * The delay for a 1-based attempt.
- *
- * `base << shift` in the spec is written as a multiplication here: a 1-second base at
- * attempt 32 would overflow a 32-bit shift and wrap to a negative delay, while `2 **
- * shift` saturates against `capMs` as intended. The shift is clamped at 30 for the
- * same reason, and at 0 so a non-positive attempt cannot produce a fractional base.
- */
-export function backoffDelay(attempt: number, config: BackoffConfig, rand: () => number): number {
-    const shift = Math.max(0, Math.min(attempt - 1, 30));
-    const expMs = Math.min(config.capMs, config.baseMs * 2 ** shift);
-    if (expMs <= config.floorMs) return config.floorMs;
-    return config.floorMs + Math.floor(rand() * (expMs - config.floorMs));
-}
 
 export type ReconnectRefusal = 'terminal' | 'disabled' | 'exhausted';
 

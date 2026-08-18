@@ -14,8 +14,6 @@ export {
 export { decideDisconnect, decisionFor, disconnectTrigger, type DisconnectDecision } from './disconnect.js';
 export {
     ReconnectPolicy,
-    backoffDelay,
-    type BackoffConfig,
     type ReconnectPlan,
     type ReconnectPolicyOptions,
     type ReconnectRefusal,

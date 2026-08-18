@@ -151,7 +151,6 @@ export {
     SessionMachine,
     SessionRegistry,
     ReconnectPolicy,
-    backoffDelay,
     createSocket,
     decideDisconnect,
     decisionFor,
@@ -164,7 +163,6 @@ export {
     nextState,
 } from './session/index.js';
 export type {
-    BackoffConfig,
     CreateSessionOptions,
     DisconnectDecision,
     ReconnectPlan,
@@ -196,6 +194,8 @@ export {
 export type { DownloadRequest, KnownServer, ParsedJid, SendQueueOptions, SendRequest } from './messaging/index.js';
 
 // --- utilities ---------------------------------------------------------------------
+export { backoffDelay } from './utils/backoff.js';
+export type { BackoffConfig } from './utils/backoff.js';
 export { mapLimit } from './utils/concurrency.js';
 export { withTimeout, type TimeoutOptions } from './utils/timeout.js';
 export { createRandom, mulberry32, randomSeed } from './utils/random.js';
