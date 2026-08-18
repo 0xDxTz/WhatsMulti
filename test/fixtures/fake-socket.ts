@@ -1,4 +1,4 @@
-import type { WASocket } from '../../src/compat/baileys.js';
+import type { AnyMessageContent, WAMessage, WASocket } from '../../src/compat/baileys.js';
 import type { EventBatch } from '../../src/events/types.js';
 import type { SocketFactory, SocketFactoryOptions } from '../../src/session/socket-factory.js';
 
@@ -16,12 +16,16 @@ export class FakeSocket {
     ended = false;
     loggedOut = false;
     pairingRequests: string[] = [];
+    sent: [string, AnyMessageContent][] = [];
 
     /** Set to make the matching call reject. */
     endError: Error | undefined;
     logoutError: Error | undefined;
     pairingError: Error | undefined;
     pairingCode = 'ABCD1234';
+    sendError: Error | undefined;
+    /** Resolved by the test, to hold a send open. */
+    sendGate: Promise<void> | undefined;
 
     readonly #handlers = new Set<(events: EventBatch) => void | Promise<void>>();
 
@@ -49,6 +53,13 @@ export class FakeSocket {
                     ? Promise.resolve(this.pairingCode)
                     : Promise.reject(this.pairingError);
             },
+            sendMessage: async (jid: string, content: AnyMessageContent): Promise<WAMessage> => {
+                if (this.sendGate !== undefined) await this.sendGate;
+                if (this.sendError !== undefined) throw this.sendError;
+                this.sent.push([jid, content]);
+                return { key: { id: `MSG${this.sent.length}`, remoteJid: jid } } as unknown as WAMessage;
+            },
+            updateMediaMessage: (msg: WAMessage): Promise<WAMessage> => Promise.resolve(msg),
             user: undefined,
         } as unknown as WASocket;
     }

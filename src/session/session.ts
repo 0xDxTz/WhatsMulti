@@ -11,7 +11,14 @@
  */
 import type { AuthStateHandle } from '../auth/index.js';
 import { useAuthState } from '../auth/index.js';
-import type { SocketConfig, WASocket } from '../compat/baileys.js';
+import type {
+    AnyMessageContent,
+    MediaDownloadOptions,
+    MiscMessageGenerationOptions,
+    SocketConfig,
+    WAMessage,
+    WASocket,
+} from '../compat/baileys.js';
 import type { ResolvedConfig } from '../config.js';
 import { WhatsMultiError, describeError, wrapError } from '../errors.js';
 import type { WMEventEmitter } from '../events/emitter.js';
@@ -19,6 +26,9 @@ import type { EventBatch, EventMap, EventMeta, EventName } from '../events/types
 import type { SessionState } from '../generated/index.js';
 import type { Logger } from '../logger.js';
 import { normalizePhoneNumber } from '../messaging/jid.js';
+import { downloadMedia, downloadMediaStream, type DownloadRequest } from '../messaging/media.js';
+import { SendQueue } from '../messaging/queue.js';
+import { sendMessage } from '../messaging/send.js';
 import type { StorageAdapter } from '../storage/adapter.js';
 
 import { decideDisconnect, disconnectTrigger } from './disconnect.js';
@@ -54,6 +64,7 @@ export class Session {
     readonly #logger: Logger;
     readonly #machine: SessionMachine;
     readonly #policy: ReconnectPolicy;
+    #queue: SendQueue;
     readonly #factory: SocketFactory;
     readonly #socketOptions: Partial<SocketConfig> | undefined;
 
@@ -78,6 +89,7 @@ export class Session {
         this.#factory = options.socketFactory ?? createSocket;
         this.#socketOptions = options.socketOptions;
         this.#policy = new ReconnectPolicy({ config: options.config.reconnect, random: options.random });
+        this.#queue = this.#newQueue();
         this.#machine = new SessionMachine({
             sessionId: options.sessionId,
             onTransition: ({ from, to, trigger }) => {
@@ -109,6 +121,14 @@ export class Session {
         return this.#policy.attempt;
     }
 
+    /**
+     * Sends waiting for a slot. The backpressure signal: a number that keeps climbing
+     * means the caller is producing faster than the rate limit allows.
+     */
+    get queueSize(): number {
+        return this.#queue.size;
+    }
+
     get destroyed(): boolean {
         return this.#destroyed;
     }
@@ -125,6 +145,8 @@ export class Session {
     async start(): Promise<void> {
         this.#assertAlive();
         this.#machine.apply('start');
+        // A stopped session closed its queue; starting again needs an open one.
+        if (this.#queue.closed) this.#queue = this.#newQueue();
 
         try {
             await this.#openSocket();
@@ -139,6 +161,13 @@ export class Session {
         this.#suppressReconnect = true;
         this.#clearTimer();
         this.#machine.tryApply('stop');
+
+        // Closed before the socket goes away so nothing new is accepted, then drained
+        // so a send already on the wire is allowed to finish rather than being cut
+        // off mid-flight.
+        this.#queue.close();
+        await this.#queue.drain();
+
         await this.#closeSocket();
         this.#machine.tryApply('stopped');
     }
@@ -153,13 +182,7 @@ export class Session {
     async logout(): Promise<void> {
         this.#assertAlive();
 
-        const socket = this.#socket;
-        if (socket === undefined || !this.#machine.is('open')) {
-            throw new WhatsMultiError('SESSION_NOT_READY', {
-                sessionId: this.sessionId,
-                params: { sessionId: this.sessionId, state: this.#machine.state, expected: 'open' },
-            });
-        }
+        const socket = this.#requireOpen();
 
         this.#suppressReconnect = true;
         this.#clearTimer();
@@ -207,6 +230,64 @@ export class Session {
         if (this.#destroyed) return;
         this.#destroyed = true;
         await this.stop();
+    }
+
+    // -------------------------------------------------------------------- messaging
+
+    /**
+     * Queues a message and resolves with what the driver sent.
+     *
+     * Sends run one at a time by default: two in flight at once mutate the same
+     * Signal session state concurrently, and the loser of that race produces a
+     * message the recipient cannot decrypt.
+     *
+     * The queue smooths bursts; it does not buffer across a disconnect. A session
+     * that is not open refuses immediately rather than collecting sends that would
+     * fail later anyway.
+     */
+    async send(to: string, content: AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<WAMessage> {
+        this.#assertAlive();
+        this.#requireOpen();
+
+        return this.#queue.push(() => {
+            // Re-checked here, not only on the way in: the session can drop while this
+            // task waits behind others in the queue.
+            const socket = this.#requireOpen();
+            return sendMessage({
+                sessionId: this.sessionId,
+                socket,
+                to,
+                content,
+                timeoutMs: this.#config.send.timeoutMs,
+                ...(options === undefined ? {} : { options }),
+            });
+        });
+    }
+
+    /** Downloads an attachment. Not queued: reads do not contend for Signal state. */
+    async downloadMedia(message: WAMessage, options?: MediaDownloadOptions): Promise<Buffer> {
+        this.#assertAlive();
+        return downloadMedia(this.#downloadRequest(message, options));
+    }
+
+    /** The same, as a stream, so a large attachment is never held in memory at once. */
+    async downloadMediaStream(
+        message: WAMessage,
+        options?: MediaDownloadOptions
+    ): Promise<ReturnType<typeof downloadMediaStream>> {
+        this.#assertAlive();
+        return downloadMediaStream(this.#downloadRequest(message, options));
+    }
+
+    #downloadRequest(message: WAMessage, options?: MediaDownloadOptions): DownloadRequest {
+        return {
+            sessionId: this.sessionId,
+            message,
+            logger: this.#logger,
+            // Passed whenever we have one, so an expired media URL can be refreshed.
+            ...(this.#socket === undefined ? {} : { socket: this.#socket }),
+            ...(options === undefined ? {} : { options }),
+        };
     }
 
     // --------------------------------------------------------------------- pairing
@@ -261,6 +342,22 @@ export class Session {
     }
 
     // ------------------------------------------------------------------- internals
+
+    #newQueue(): SendQueue {
+        return new SendQueue({ sessionId: this.sessionId, config: this.#config.send });
+    }
+
+    /** The socket, or SESSION_NOT_READY naming the state that refused. */
+    #requireOpen(): WASocket {
+        const socket = this.#socket;
+        if (socket === undefined || !this.#machine.sendable) {
+            throw new WhatsMultiError('SESSION_NOT_READY', {
+                sessionId: this.sessionId,
+                params: { sessionId: this.sessionId, state: this.#machine.state, expected: 'open' },
+            });
+        }
+        return socket;
+    }
 
     #assertAlive(): void {
         if (this.#destroyed) throw new WhatsMultiError('CLIENT_DESTROYED', { sessionId: this.sessionId });

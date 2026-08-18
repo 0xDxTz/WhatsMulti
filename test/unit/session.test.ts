@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { setDriverLoader, type BaileysModule } from '../../src/compat/driver.js';
 import { DEFAULT_CONFIG, type ResolvedConfig } from '../../src/config.js';
 import { WMEventEmitter } from '../../src/events/emitter.js';
 import type { EventMeta } from '../../src/events/types.js';
@@ -809,5 +810,164 @@ describe('Session event forwarding', () => {
         // internal save threw: swallowing the batch would hide driver events behind
         // an unrelated storage fault.
         expect(h.seen.filter(([name]) => name === 'creds.update')).toHaveLength(1);
+    });
+});
+
+describe('Session.send', () => {
+    it('sends through the socket and returns the driver message', async () => {
+        const h = await opened();
+
+        const sent = await h.session.send('+62 812-3456-789', { text: 'hi' });
+
+        expect(h.driver.last.sent).toEqual([['628123456789@s.whatsapp.net', { text: 'hi' }]]);
+        expect(sent.key.id).toBe('MSG1');
+    });
+
+    it('refuses while the session is not open', async () => {
+        // The queue smooths bursts; it does not buffer across a disconnect.
+        const h = harness();
+
+        await expect(h.session.send('628123456789', { text: 'hi' })).rejects.toMatchObject({
+            code: 'SESSION_NOT_READY',
+        });
+
+        await h.session.start();
+        await expect(h.session.send('628123456789', { text: 'hi' })).rejects.toMatchObject({
+            code: 'SESSION_NOT_READY',
+        });
+    });
+
+    it('serialises sends', async () => {
+        // Two in flight at once mutate the same Signal session state concurrently.
+        const h = await opened();
+        let live = 0;
+        let peak = 0;
+        h.driver.last.sendGate = (async () => {
+            live += 1;
+            peak = Math.max(peak, live);
+            await Promise.resolve();
+            live -= 1;
+        })();
+
+        await Promise.all([
+            h.session.send('628123456789', { text: 'a' }),
+            h.session.send('628123456789', { text: 'b' }),
+        ]);
+
+        expect(peak).toBe(1);
+        expect(h.driver.last.sent.map(([, content]) => content)).toEqual([{ text: 'a' }, { text: 'b' }]);
+    });
+
+    it('reports how many sends are waiting', async () => {
+        const h = await opened();
+        let release!: () => void;
+        h.driver.last.sendGate = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+
+        const inFlight = [h.session.send('628123456789', { text: 'a' }), h.session.send('628123456789', { text: 'b' })];
+        expect(h.session.queueSize).toBe(1);
+
+        release();
+        await Promise.all(inFlight);
+        expect(h.session.queueSize).toBe(0);
+    });
+
+    it('fails a queued send if the session dropped while it waited', async () => {
+        const h = await opened();
+        let release!: () => void;
+        h.driver.last.sendGate = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        const first = h.session.send('628123456789', { text: 'a' });
+        const queued = h.session.send('628123456789', { text: 'b' });
+
+        await h.driver.last.close(428);
+        release();
+
+        await expect(first).resolves.toBeDefined();
+        await expect(queued).rejects.toMatchObject({ code: 'SESSION_NOT_READY' });
+    });
+
+    it('surfaces a driver failure as SEND_FAILED', async () => {
+        const h = await opened();
+        h.driver.last.sendError = new Error('rate-overlimit');
+
+        await expect(h.session.send('628123456789', { text: 'hi' })).rejects.toMatchObject({
+            code: 'SEND_FAILED',
+        });
+    });
+
+    it('rejects an unusable recipient', async () => {
+        const h = await opened();
+
+        await expect(h.session.send('0812345678', { text: 'hi' })).rejects.toMatchObject({
+            code: 'INVALID_PHONE_NUMBER',
+        });
+    });
+
+    it('refuses once destroyed', async () => {
+        const h = await opened();
+        await h.session.destroy();
+
+        await expect(h.session.send('628123456789', { text: 'hi' })).rejects.toMatchObject({
+            code: 'CLIENT_DESTROYED',
+        });
+    });
+});
+
+describe('Session.stop with a busy queue', () => {
+    it('lets a send already on the wire finish, and rejects the rest', async () => {
+        const h = await opened();
+        let release!: () => void;
+        h.driver.last.sendGate = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        const running = h.session.send('628123456789', { text: 'a' });
+        const waiting = h.session.send('628123456789', { text: 'b' });
+
+        const stopping = h.session.stop();
+        await expect(waiting).rejects.toMatchObject({ code: 'SEND_FAILED' });
+        release();
+        await stopping;
+
+        await expect(running).resolves.toBeDefined();
+        expect(h.session.state).toBe('closed');
+    });
+
+    it('accepts sends again after a restart', async () => {
+        const h = await opened();
+        await h.session.stop();
+        await h.session.start();
+        await h.driver.last.open();
+
+        await expect(h.session.send('628123456789', { text: 'hi' })).resolves.toBeDefined();
+    });
+});
+
+describe('Session.downloadMedia', () => {
+    it('passes the live socket so an expired URL can be refreshed', async () => {
+        const h = await opened();
+        const message = { key: { id: 'MSG1' } } as unknown as Parameters<typeof h.session.downloadMedia>[0];
+        const download = vi.fn((..._args: [unknown, unknown, unknown, unknown]) =>
+            Promise.resolve(Buffer.from('bytes'))
+        );
+        setDriverLoader(() => Promise.resolve({ downloadMediaMessage: download } as unknown as BaileysModule));
+
+        try {
+            await expect(h.session.downloadMedia(message)).resolves.toEqual(Buffer.from('bytes'));
+            expect(download.mock.calls[0]?.[3]).toBeDefined();
+        } finally {
+            setDriverLoader(null);
+        }
+    });
+
+    it('refuses once destroyed', async () => {
+        const h = await opened();
+        const message = { key: { id: 'MSG1' } } as unknown as Parameters<typeof h.session.downloadMedia>[0];
+        await h.session.destroy();
+
+        await expect(h.session.downloadMedia(message)).rejects.toMatchObject({ code: 'CLIENT_DESTROYED' });
+        await expect(h.session.downloadMediaStream(message)).rejects.toMatchObject({ code: 'CLIENT_DESTROYED' });
     });
 });
