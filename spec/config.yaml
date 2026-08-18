@@ -64,6 +64,29 @@ load:
     concurrency: { type: int, default: 8, min: 1, description: bounded fan-out for loadSessions }
     auto_start: { type: bool, default: false }
 
+# Webhook forwarder. Not part of the client config block: the forwarder is a plugin,
+# constructed with its own options. The keys and defaults live here because a receiver
+# must not be able to tell which runtime sent the request, and that includes how long
+# it waits between retries.
+webhook:
+    url: { type: string, description: 'destination; required, http or https only' }
+    secret: { type: string, description: 'HMAC-SHA256 signing key; required, see webhook.md' }
+    events:
+        type: list
+        default: '<every name in events.yaml#lifecycle and events.yaml#wire_mapping>'
+        description: allow-list of canonical event names; an unlisted event is never forwarded
+    timeout_ms: { type: int, default: 10000, min: 1000, description: deadline for one POST }
+    batch_window_ms: { type: int, default: 0, min: 0, description: '0 posts each driver batch as it arrives' }
+    max_batch_size: { type: int, default: 100, min: 1, description: events per delivery }
+    max_queue: { type: int, default: 1000, min: 1, description: pending deliveries; overflow goes to the dead letter }
+    drain_timeout_ms:
+        { type: int, default: 5000, min: 0, description: shutdown grace before pending deliveries are dead-lettered }
+    retry:
+        max_attempts: { type: int, default: 5, min: 1, description: 'total attempts per delivery, not extra ones' }
+        base_ms: { type: int, default: 1000, min: 100 }
+        cap_ms: { type: int, default: 60000, min: 1000 }
+        floor_ms: { type: int, default: 250, min: 0 }
+
 session_id:
     pattern: '^[A-Za-z0-9_-]{1,64}$'
     description: >

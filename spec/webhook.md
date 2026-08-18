@@ -17,7 +17,7 @@ X-WhatsMulti-Signature: t=<unix-seconds>,v1=<hex hmac-sha256>
 
 ```jsonc
 {
-    "specVersion": "0.2.8",
+    "specVersion": "0.2.9",
     "instanceId": "host:1234:a1b2c3",
     "events": [
         {
@@ -32,6 +32,32 @@ X-WhatsMulti-Signature: t=<unix-seconds>,v1=<hex hmac-sha256>
 
 `events` is always an array, even for a single event. Batching is a delivery
 optimisation and must never change the shape.
+
+### Which events cross the wire
+
+Lifecycle events go out under the names in `events.yaml#lifecycle`. Driver-native
+events go out under the canonical name in `events.yaml#wire_mapping` -- never under the
+driver's own name, which is the one place the two runtimes would otherwise be
+distinguishable. Anything not named in either list is in-process only and is never
+forwarded, whatever the allow-list says.
+
+### Binary values
+
+`data` is whatever the driver produced, and driver payloads carry binary. JSON has no
+binary type, so a byte string is encoded as:
+
+```json
+{ "type": "Buffer", "data": "<standard base64>" }
+```
+
+This is the same shape WhatsMulti uses at rest, and it is self-describing: a receiver
+can tell a byte string from a text field without knowing the schema of every event.
+Go's default `[]byte` marshalling produces a bare base64 string and must be overridden
+to match.
+
+A payload that cannot be serialised at all -- a cycle, a `BigInt` -- is not sent. It
+goes to the dead letter with the encoding failure attached, because silently posting a
+truncated event is worse than not posting it.
 
 ## Signature
 
@@ -78,5 +104,8 @@ function verify(rawBody, header, secret, toleranceSec = 300) {
 - Honour `Retry-After` when present; it overrides the computed delay.
 - A bounded in-memory buffer holds pending deliveries. Overflow and permanent failure
   both go to the `onDeadLetter` callback rather than being dropped silently.
+- Deliveries are posted one at a time, in order. Events reach the receiver in the order
+  the driver produced them, and a retry never overtakes the delivery behind it.
+- Config keys and defaults: `config.yaml#webhook`.
 
 Fixtures: `vectors/webhook-signature.json`.
