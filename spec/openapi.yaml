@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
     title: WhatsMulti Control Plane
-    version: 0.2.9
+    version: 0.2.10
     description: >
         Implemented identically by @dutakey/whatsmulti/server (Hono) and by
         whatsmulti-go (net/http). An API client works unchanged against either.
@@ -31,6 +31,8 @@ paths:
                                     sessions:
                                         type: array
                                         items: { $ref: '#/components/schemas/Session' }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                default: { $ref: '#/components/responses/Error' }
         post:
             operationId: createSession
             summary: Create a session
@@ -50,6 +52,8 @@ paths:
                 '201': { $ref: '#/components/responses/SessionOk' }
                 '409': { $ref: '#/components/responses/Error' }
                 '422': { $ref: '#/components/responses/Error' }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                default: { $ref: '#/components/responses/Error' }
 
     /sessions/{id}:
         parameters: [{ $ref: '#/components/parameters/SessionId' }]
@@ -58,6 +62,8 @@ paths:
             responses:
                 '200': { $ref: '#/components/responses/SessionOk' }
                 '404': { $ref: '#/components/responses/Error' }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                default: { $ref: '#/components/responses/Error' }
         delete:
             operationId: deleteSession
             description: >
@@ -66,6 +72,8 @@ paths:
             responses:
                 '204': { description: Deleted }
                 '404': { $ref: '#/components/responses/Error' }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                default: { $ref: '#/components/responses/Error' }
 
     /sessions/{id}/start:
         parameters: [{ $ref: '#/components/parameters/SessionId' }]
@@ -75,6 +83,8 @@ paths:
                 '202': { $ref: '#/components/responses/SessionOk' }
                 '404': { $ref: '#/components/responses/Error' }
                 '409': { $ref: '#/components/responses/Error' }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                default: { $ref: '#/components/responses/Error' }
 
     /sessions/{id}/stop:
         parameters: [{ $ref: '#/components/parameters/SessionId' }]
@@ -83,6 +93,8 @@ paths:
             responses:
                 '202': { $ref: '#/components/responses/SessionOk' }
                 '404': { $ref: '#/components/responses/Error' }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                default: { $ref: '#/components/responses/Error' }
 
     /sessions/{id}/restart:
         parameters: [{ $ref: '#/components/parameters/SessionId' }]
@@ -91,6 +103,8 @@ paths:
             responses:
                 '202': { $ref: '#/components/responses/SessionOk' }
                 '404': { $ref: '#/components/responses/Error' }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                default: { $ref: '#/components/responses/Error' }
 
     /sessions/{id}/logout:
         parameters: [{ $ref: '#/components/parameters/SessionId' }]
@@ -100,6 +114,8 @@ paths:
             responses:
                 '202': { $ref: '#/components/responses/SessionOk' }
                 '404': { $ref: '#/components/responses/Error' }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                default: { $ref: '#/components/responses/Error' }
 
     /sessions/{id}/qr:
         parameters:
@@ -128,6 +144,8 @@ paths:
                     content:
                         application/json:
                             schema: { $ref: '#/components/schemas/Error' }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                default: { $ref: '#/components/responses/Error' }
 
     /sessions/{id}/pairing-code:
         parameters: [{ $ref: '#/components/parameters/SessionId' }]
@@ -160,6 +178,8 @@ paths:
                                     expiresAt: { type: integer, format: int64 }
                 '409': { $ref: '#/components/responses/Error' }
                 '422': { $ref: '#/components/responses/Error' }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                default: { $ref: '#/components/responses/Error' }
 
     /sessions/{id}/messages:
         parameters: [{ $ref: '#/components/parameters/SessionId' }]
@@ -193,6 +213,8 @@ paths:
                     content:
                         application/json:
                             schema: { $ref: '#/components/schemas/Error' }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                default: { $ref: '#/components/responses/Error' }
 
     /events:
         get:
@@ -213,6 +235,8 @@ paths:
                     content:
                         text/event-stream:
                             schema: { $ref: '#/components/schemas/EventEnvelope' }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                default: { $ref: '#/components/responses/Error' }
 
     /healthz:
         get:
@@ -232,6 +256,7 @@ paths:
                                     runtime: { type: string, enum: [ts, go] }
                                     instanceId: { type: string }
                                     sessions: { type: integer }
+                default: { $ref: '#/components/responses/Error' }
 
     /metrics:
         get:
@@ -242,6 +267,7 @@ paths:
                     description: Prometheus text exposition format
                     content:
                         text/plain: { schema: { type: string } }
+                default: { $ref: '#/components/responses/Error' }
 
 components:
     securitySchemes:
@@ -255,6 +281,11 @@ components:
             schema: { type: string, pattern: '^[A-Za-z0-9_-]{1,64}$' }
 
     responses:
+        Unauthorized:
+            description: Missing or invalid bearer token
+            content:
+                application/json:
+                    schema: { $ref: '#/components/schemas/Error' }
         SessionOk:
             description: OK
             content:
@@ -290,6 +321,11 @@ components:
         Error:
             type: object
             required: [code, message]
+            description: >
+                Every failure answers with this shape. The status for a given code is
+                `http` in errors.yaml, shared by both runtimes -- which is why each
+                operation carries a `default` response rather than enumerating every
+                status it could produce.
             properties:
                 code: { type: string, description: see errors.yaml }
                 message: { type: string }

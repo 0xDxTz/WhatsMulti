@@ -1,5 +1,5 @@
 // Code generated from spec/errors.yaml by scripts/generate.mjs. DO NOT EDIT.
-// Spec version: 0.2.9
+// Spec version: 0.2.10
 
 export const ERROR_CODES = [
     'SESSION_NOT_FOUND',
@@ -96,4 +96,32 @@ export const ERROR_RETRYABLE: Readonly<Record<ErrorCode, boolean>> = {
     INVALID_JID: false,
     LISTENER_FAILED: false,
     ILLEGAL_TRANSITION: false,
+};
+
+/**
+ * The status the REST control plane answers with. Shared by both runtimes, so an API
+ * client that branches on the status never has to ask which build it is talking to.
+ */
+export const ERROR_HTTP_STATUS: Readonly<Record<ErrorCode, number>> = {
+    SESSION_NOT_FOUND: 404,
+    SESSION_EXISTS: 409,
+    INVALID_SESSION_ID: 422,
+    SESSION_NOT_READY: 409,
+    SESSION_LOCKED: 409,
+    SESSION_LOGGED_OUT: 409,
+    SESSION_FAILED: 500,
+    STORAGE_ERROR: 500,
+    SEND_FAILED: 503,
+    LOGOUT_FAILED: 502,
+    MEDIA_DOWNLOAD_FAILED: 502,
+    TIMEOUT: 504,
+    MISSING_PEER: 501,
+    INVALID_CONFIG: 422,
+    CLIENT_DESTROYED: 503,
+    PAIRING_UNAVAILABLE: 409,
+    PAIRING_IN_PROGRESS: 409,
+    INVALID_PHONE_NUMBER: 422,
+    INVALID_JID: 422,
+    LISTENER_FAILED: 500,
+    ILLEGAL_TRANSITION: 409,
 };

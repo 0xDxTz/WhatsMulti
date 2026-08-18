@@ -1,5 +1,5 @@
 // Code generated from spec/disconnect-causes.yaml by scripts/generate.mjs. DO NOT EDIT.
-// Spec version: 0.2.9
+// Spec version: 0.2.10
 
 export const DISCONNECT_CAUSES = [
     'restart_required',

@@ -146,6 +146,17 @@ ${constMap(
     String
 )}
 };
+
+/**
+ * The status the REST control plane answers with. Shared by both runtimes, so an API
+ * client that branches on the status never has to ask which build it is talking to.
+ */
+export const ERROR_HTTP_STATUS: Readonly<Record<ErrorCode, number>> = {
+${constMap(
+    spec.errors.map((e) => [e.code, e.http]),
+    String
+)}
+};
 `;
 }
 
