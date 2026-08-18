@@ -54,7 +54,7 @@ export {
 export type { ErrorParams, SerializedError, WhatsMultiErrorOptions } from './errors.js';
 
 // --- logging ----------------------------------------------------------------------
-export { createLogger, silentLogger, resolveLogger, isLogLevel, LOG_LEVELS } from './logger.js';
+export { createLogger, silentLogger, resolveLogger, isLogLevel, levelEnabled, LOG_LEVELS } from './logger.js';
 export type { Logger, LogFn, LogLevel, ConsoleLoggerOptions } from './logger.js';
 
 // --- configuration ----------------------------------------------------------------

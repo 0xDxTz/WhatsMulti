@@ -49,6 +49,7 @@ describe('public surface', () => {
         'silentLogger',
         'resolveLogger',
         'isLogLevel',
+        'levelEnabled',
         'LOG_LEVELS',
         // configuration
         'resolveConfig',

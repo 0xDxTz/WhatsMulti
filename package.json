@@ -65,6 +65,7 @@
         "gen": "node scripts/generate.mjs",
         "gen:check": "node scripts/generate.mjs --check",
         "docs": "typedoc",
+        "example": "npm run build && tsx",
         "vectors": "node scripts/generate-vectors.mjs",
         "verify:pack": "npm run build && publint && attw --pack . --profile esm-only",
         "check": "npm run gen:check && npm run lint && npm run typecheck && npm run test"
@@ -118,6 +119,7 @@
         "prettier": "^3.6.2",
         "publint": "^0.3.16",
         "qrcode": "^1.5.4",
+        "tsx": "^4.23.12",
         "typedoc": "^0.28.20",
         "typescript": "^5.9.3",
         "typescript-eslint": "^8.56.0",

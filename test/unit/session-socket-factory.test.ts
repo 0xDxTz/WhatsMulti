@@ -90,6 +90,42 @@ describe('toDriverLogger', () => {
         expect(typeof child.child).toBe('function');
     });
 
+    it('drops everything at the silent default', () => {
+        // The default. Baileys logs the handshake, the registration attempt and every
+        // stream event at info; none of it belongs on a consumer's logger unless they
+        // asked for it. The driver calls the method regardless of `.level`, so the
+        // gate has to live here.
+        const { logger, calls } = recordingLogger();
+        const driverLogger = toDriverLogger(logger, 'silent');
+
+        driverLogger.error({}, 'e');
+        driverLogger.warn({}, 'w');
+        driverLogger.info({}, 'i');
+
+        expect(calls).toEqual([]);
+    });
+
+    it('passes what the configured level allows and drops the rest', () => {
+        const { logger, calls } = recordingLogger();
+        const driverLogger = toDriverLogger(logger, 'warn');
+
+        driverLogger.error({}, 'e');
+        driverLogger.warn({}, 'w');
+        driverLogger.info({}, 'i');
+        driverLogger.debug({}, 'd');
+        driverLogger.trace({}, 't');
+
+        expect(calls.map(([level]) => level)).toEqual(['error', 'warn']);
+    });
+
+    it('keeps the gate across child loggers', () => {
+        const { logger, calls } = recordingLogger();
+
+        toDriverLogger(logger, 'silent').child({ scope: 'ws' }).info({}, 'i');
+
+        expect(calls).toEqual([]);
+    });
+
     it('routes every level', () => {
         const { logger, calls } = recordingLogger();
         const driverLogger = toDriverLogger(logger, 'trace');

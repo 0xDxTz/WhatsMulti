@@ -6,8 +6,15 @@ so each file reads exactly as your own code would.
 
 ```sh
 npm ci
-npx tsx examples/basic.ts
+npm run example examples/basic.ts
 ```
+
+The build step in `npm run example` is not optional. Type checking resolves the
+package name through `paths` to `src/`, but Node resolves it by [self
+reference](https://nodejs.org/api/packages.html#self-referencing-a-package-using-its-name)
+to the `exports` map — that is, to `dist/`. Running without building first executes
+whatever was built last, which is the kind of thing that costs an hour before anyone
+suspects it.
 
 | File                                         | Shows                                                            |
 | -------------------------------------------- | ---------------------------------------------------------------- |

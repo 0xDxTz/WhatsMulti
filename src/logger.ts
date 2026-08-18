@@ -38,6 +38,17 @@ export interface Logger {
     child(bindings: Record<string, unknown>): Logger;
 }
 
+/**
+ * Whether a message at `level` survives a logger configured at `configured`.
+ *
+ * Exported because the driver bridge needs the same comparison: a logger handed to
+ * Baileys has to filter its own output, and reimplementing the ordering there is how
+ * two definitions of `silent` appear in one process.
+ */
+export function levelEnabled(configured: LogLevel, level: LogLevel): boolean {
+    return SEVERITY[level] > 0 && SEVERITY[configured] >= SEVERITY[level];
+}
+
 export function isLogLevel(value: unknown): value is LogLevel {
     return typeof value === 'string' && (LOG_LEVELS as readonly string[]).includes(value);
 }

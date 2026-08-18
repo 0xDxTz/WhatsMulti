@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { createLogger, isLogLevel, LOG_LEVELS, resolveLogger, silentLogger } from '../../src/logger.js';
+import { createLogger, isLogLevel, levelEnabled, LOG_LEVELS, resolveLogger, silentLogger } from '../../src/logger.js';
 
 function sink() {
     const lines: string[] = [];
@@ -119,5 +119,25 @@ describe('isLogLevel', () => {
     it('accepts every documented level and rejects the rest', () => {
         for (const level of LOG_LEVELS) expect(isLogLevel(level)).toBe(true);
         for (const value of ['fatal', 'verbose', '', 1, null, undefined]) expect(isLogLevel(value)).toBe(false);
+    });
+});
+
+describe('levelEnabled', () => {
+    it('passes a message at or above the configured level', () => {
+        expect(levelEnabled('info', 'error')).toBe(true);
+        expect(levelEnabled('info', 'info')).toBe(true);
+    });
+
+    it('drops a message below it', () => {
+        expect(levelEnabled('info', 'debug')).toBe(false);
+        expect(levelEnabled('error', 'warn')).toBe(false);
+    });
+
+    it('drops everything at silent', () => {
+        for (const level of LOG_LEVELS) expect(levelEnabled('silent', level)).toBe(false);
+    });
+
+    it('never treats silent as a message level', () => {
+        expect(levelEnabled('trace', 'silent')).toBe(false);
     });
 });
