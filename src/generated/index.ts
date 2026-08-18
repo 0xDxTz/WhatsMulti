@@ -1,5 +1,5 @@
 // Code generated from spec/* by scripts/generate.mjs. DO NOT EDIT.
-// Spec version: 0.2.4
+// Spec version: 0.2.5
 
 export * from './spec-version.js';
 export * from './states.js';

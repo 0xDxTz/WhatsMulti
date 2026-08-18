@@ -1,5 +1,5 @@
 // Code generated from spec/errors.yaml by scripts/generate.mjs. DO NOT EDIT.
-// Spec version: 0.2.4
+// Spec version: 0.2.5
 
 export const ERROR_CODES = [
     'SESSION_NOT_FOUND',
@@ -56,7 +56,7 @@ export const ERROR_MESSAGES: Readonly<Record<ErrorCode, string>> = {
     SESSION_LOGGED_OUT: 'Session {sessionId} is logged out and must be paired again',
     SESSION_FAILED: 'Session {sessionId} failed: {detail}',
     STORAGE_ERROR: 'Storage adapter {adapter} failed: {detail}',
-    SEND_FAILED: 'Failed to send message on session {sessionId}',
+    SEND_FAILED: 'Failed to send message on session {sessionId}: {detail}',
     LOGOUT_FAILED: 'Failed to unlink session {sessionId} from the phone: {detail}',
     TIMEOUT: 'Operation {operation} timed out after {timeoutMs}ms',
     MISSING_PEER: '{feature} requires the peer dependency {peer}; install it with {install}',
