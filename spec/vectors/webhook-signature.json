@@ -1,29 +1,29 @@
 {
-  "specVersion": "0.2.12",
+  "specVersion": "0.2.13",
   "description": "signature = hex(HMAC_SHA256(secret, `${t}.${body}`)). Sign the RAW body bytes; re-serialising the JSON changes bytes and breaks verification.",
   "secret": "whsec_test_do_not_use_in_production",
   "toleranceSeconds": 300,
   "cases": [
     {
       "t": 1755500000,
-      "body": "{\"specVersion\":\"0.2.12\",\"instanceId\":\"host:1234:a1b2c3\",\"events\":[{\"event\":\"session.state\",\"sessionId\":\"session-1\",\"ts\":1755500000000,\"data\":{\"from\":\"connecting\",\"to\":\"open\"}}]}",
-      "signedPayload": "1755500000.{\"specVersion\":\"0.2.12\",\"instanceId\":\"host:1234:a1b2c3\",\"events\":[{\"event\":\"session.state\",\"sessionId\":\"session-1\",\"ts\":1755500000000,\"data\":{\"from\":\"connecting\",\"to\":\"open\"}}]}",
-      "v1": "76a0744337f023dc9fcec4b9c4b7fe7f714159a40a64b36cb60f100780e483d8",
-      "header": "t=1755500000,v1=76a0744337f023dc9fcec4b9c4b7fe7f714159a40a64b36cb60f100780e483d8"
+      "body": "{\"specVersion\":\"0.2.13\",\"instanceId\":\"host:1234:a1b2c3\",\"events\":[{\"event\":\"session.state\",\"sessionId\":\"session-1\",\"ts\":1755500000000,\"data\":{\"from\":\"connecting\",\"to\":\"open\"}}]}",
+      "signedPayload": "1755500000.{\"specVersion\":\"0.2.13\",\"instanceId\":\"host:1234:a1b2c3\",\"events\":[{\"event\":\"session.state\",\"sessionId\":\"session-1\",\"ts\":1755500000000,\"data\":{\"from\":\"connecting\",\"to\":\"open\"}}]}",
+      "v1": "4c24164d073664f18b249920fc09202b74807f67d302a12ba7e8c2bf369fc895",
+      "header": "t=1755500000,v1=4c24164d073664f18b249920fc09202b74807f67d302a12ba7e8c2bf369fc895"
     },
     {
       "t": 1,
-      "body": "{\"specVersion\":\"0.2.12\",\"instanceId\":\"host:1234:a1b2c3\",\"events\":[{\"event\":\"message.received\",\"sessionId\":\"s_1\",\"ts\":1755500000001,\"data\":{\"messages\":[]}},{\"event\":\"message.received\",\"sessionId\":\"s_1\",\"ts\":1755500000002,\"data\":{\"messages\":[]}}]}",
-      "signedPayload": "1.{\"specVersion\":\"0.2.12\",\"instanceId\":\"host:1234:a1b2c3\",\"events\":[{\"event\":\"message.received\",\"sessionId\":\"s_1\",\"ts\":1755500000001,\"data\":{\"messages\":[]}},{\"event\":\"message.received\",\"sessionId\":\"s_1\",\"ts\":1755500000002,\"data\":{\"messages\":[]}}]}",
-      "v1": "83f155ca6dfd225bca5f5ca99834a88b7eb69f0ec4cc8f2da31ad6acbe684652",
-      "header": "t=1,v1=83f155ca6dfd225bca5f5ca99834a88b7eb69f0ec4cc8f2da31ad6acbe684652"
+      "body": "{\"specVersion\":\"0.2.13\",\"instanceId\":\"host:1234:a1b2c3\",\"events\":[{\"event\":\"message.received\",\"sessionId\":\"s_1\",\"ts\":1755500000001,\"data\":{\"messages\":[]}},{\"event\":\"message.received\",\"sessionId\":\"s_1\",\"ts\":1755500000002,\"data\":{\"messages\":[]}}]}",
+      "signedPayload": "1.{\"specVersion\":\"0.2.13\",\"instanceId\":\"host:1234:a1b2c3\",\"events\":[{\"event\":\"message.received\",\"sessionId\":\"s_1\",\"ts\":1755500000001,\"data\":{\"messages\":[]}},{\"event\":\"message.received\",\"sessionId\":\"s_1\",\"ts\":1755500000002,\"data\":{\"messages\":[]}}]}",
+      "v1": "2d5f4c74bdb7229fc733b6e5bdeb2adeb76376b06999fa3b7ca3c50b63d80263",
+      "header": "t=1,v1=2d5f4c74bdb7229fc733b6e5bdeb2adeb76376b06999fa3b7ca3c50b63d80263"
     },
     {
       "t": 2147483647,
-      "body": "{\"specVersion\":\"0.2.12\",\"instanceId\":\"i\",\"events\":[]}",
-      "signedPayload": "2147483647.{\"specVersion\":\"0.2.12\",\"instanceId\":\"i\",\"events\":[]}",
-      "v1": "0718b54c76e1ce1d1098397294d74be44e255bedb9cda2aa00bba19aaba922d1",
-      "header": "t=2147483647,v1=0718b54c76e1ce1d1098397294d74be44e255bedb9cda2aa00bba19aaba922d1"
+      "body": "{\"specVersion\":\"0.2.13\",\"instanceId\":\"i\",\"events\":[]}",
+      "signedPayload": "2147483647.{\"specVersion\":\"0.2.13\",\"instanceId\":\"i\",\"events\":[]}",
+      "v1": "84b253674daab1bd7a5c2e41e9b134ce04734978bd1bd335125df9a7f36b760d",
+      "header": "t=2147483647,v1=84b253674daab1bd7a5c2e41e9b134ce04734978bd1bd335125df9a7f36b760d"
     }
   ]
 }

@@ -1,5 +1,5 @@
 {
-  "specVersion": "0.2.12",
+  "specVersion": "0.2.13",
   "description": "Given a driver signal, an implementation must resolve the canonical cause, its action, and whether credentials are purged. Message matching runs before the numeric map.",
   "baileysStatus": [
     {
