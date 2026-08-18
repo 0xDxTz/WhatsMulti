@@ -23,6 +23,12 @@ errors:
     - code: SESSION_LOGGED_OUT
       message: Session {sessionId} is logged out and must be paired again
       retryable: false
+    # The generic failure. Exists so that a foreign error -- a driver throwing while
+    # opening a socket, say -- can be reported on session.error without being
+    # mislabelled with whichever specific code happens to be nearby.
+    - code: SESSION_FAILED
+      message: 'Session {sessionId} failed: {detail}'
+      retryable: true
     - code: STORAGE_ERROR
       message: 'Storage adapter {adapter} failed: {detail}'
       retryable: true

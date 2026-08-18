@@ -1,5 +1,5 @@
 // Code generated from spec/errors.yaml by scripts/generate.mjs. DO NOT EDIT.
-// Spec version: 0.2.3
+// Spec version: 0.2.4
 
 export const ERROR_CODES = [
     'SESSION_NOT_FOUND',
@@ -8,6 +8,7 @@ export const ERROR_CODES = [
     'SESSION_NOT_READY',
     'SESSION_LOCKED',
     'SESSION_LOGGED_OUT',
+    'SESSION_FAILED',
     'STORAGE_ERROR',
     'SEND_FAILED',
     'LOGOUT_FAILED',
@@ -30,6 +31,7 @@ export type ErrorCode =
     | 'SESSION_NOT_READY'
     | 'SESSION_LOCKED'
     | 'SESSION_LOGGED_OUT'
+    | 'SESSION_FAILED'
     | 'STORAGE_ERROR'
     | 'SEND_FAILED'
     | 'LOGOUT_FAILED'
@@ -52,6 +54,7 @@ export const ERROR_MESSAGES: Readonly<Record<ErrorCode, string>> = {
     SESSION_NOT_READY: 'Session {sessionId} is {state}, expected one of {expected}',
     SESSION_LOCKED: 'Session {sessionId} is held by instance {owner}',
     SESSION_LOGGED_OUT: 'Session {sessionId} is logged out and must be paired again',
+    SESSION_FAILED: 'Session {sessionId} failed: {detail}',
     STORAGE_ERROR: 'Storage adapter {adapter} failed: {detail}',
     SEND_FAILED: 'Failed to send message on session {sessionId}',
     LOGOUT_FAILED: 'Failed to unlink session {sessionId} from the phone: {detail}',
@@ -75,6 +78,7 @@ export const ERROR_RETRYABLE: Readonly<Record<ErrorCode, boolean>> = {
     SESSION_NOT_READY: true,
     SESSION_LOCKED: true,
     SESSION_LOGGED_OUT: false,
+    SESSION_FAILED: true,
     STORAGE_ERROR: true,
     SEND_FAILED: true,
     LOGOUT_FAILED: true,

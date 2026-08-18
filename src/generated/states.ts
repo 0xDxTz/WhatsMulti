@@ -1,5 +1,5 @@
 // Code generated from spec/states.yaml by scripts/generate.mjs. DO NOT EDIT.
-// Spec version: 0.2.3
+// Spec version: 0.2.4
 
 export const SESSION_STATES = [
     'idle',

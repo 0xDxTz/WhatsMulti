@@ -1,5 +1,5 @@
 {
-  "specVersion": "0.2.3",
+  "specVersion": "0.2.4",
   "description": "normalizeJid(input) must produce `jid`, or fail with `error`. The two phone rules mirror whatsmeow PairPhone validation so neither runtime accepts input the other rejects.",
   "knownServers": [
     "s.whatsapp.net",
