@@ -1,10 +1,12 @@
 /**
  * @dutakey/whatsmulti — multi-session WhatsApp orchestration built on Baileys.
  *
- * The rewrite lands phase by phase (see docs/REWRITE-v2-PLAN.md). What is exported
- * here is the spec surface: the enums and constants that are generated from `spec/`
- * and are therefore identical in the Go implementation.
+ * The rewrite lands phase by phase; see docs/REWRITE-v2-PLAN.md. Everything exported
+ * from `generated/` is compiled from `spec/` and is identical in the planned Go
+ * implementation.
  */
+
+// --- spec surface (generated from spec/) -----------------------------------------
 export {
     SPEC_VERSION,
     SESSION_STATES,
@@ -33,3 +35,68 @@ export type {
     LifecycleEvent,
     WireEvent,
 } from './generated/index.js';
+
+// --- errors -----------------------------------------------------------------------
+export {
+    WhatsMultiError,
+    formatErrorMessage,
+    isWhatsMultiError,
+    hasErrorCode,
+    wrapError,
+    describeError,
+} from './errors.js';
+export type { ErrorParams, SerializedError, WhatsMultiErrorOptions } from './errors.js';
+
+// --- logging ----------------------------------------------------------------------
+export { createLogger, silentLogger, resolveLogger, isLogLevel, LOG_LEVELS } from './logger.js';
+export type { Logger, LogFn, LogLevel, ConsoleLoggerOptions } from './logger.js';
+
+// --- configuration ----------------------------------------------------------------
+export {
+    resolveConfig,
+    generateInstanceId,
+    isValidSessionId,
+    assertValidSessionId,
+    DEFAULT_CONFIG,
+    SESSION_ID_PATTERN,
+} from './config.js';
+export type {
+    WhatsMultiConfig,
+    ResolvedConfig,
+    ReconnectConfig,
+    QrConfig,
+    PairingConfig,
+    SendConfig,
+    LockConfig,
+    LoadConfig,
+} from './config.js';
+
+// --- events -----------------------------------------------------------------------
+export { WMEventEmitter } from './events/index.js';
+export type {
+    EmitterOptions,
+    EventBatch,
+    EventBatchListener,
+    EventListener,
+    EventMap,
+    EventMeta,
+    EventName,
+    LifecycleEventMap,
+    PairingCodeEvent,
+    QrEvent,
+    SessionCreatedEvent,
+    SessionErrorEvent,
+    SessionFencedEvent,
+    SessionLoggedOutEvent,
+    SessionReconnectingEvent,
+    SessionRemovedEvent,
+    SessionStateEvent,
+} from './events/index.js';
+
+// --- plugins ----------------------------------------------------------------------
+export { PluginRegistry, definePlugin } from './plugin.js';
+export type { Plugin, PluginContext, PluginEvents } from './plugin.js';
+
+// --- driver compatibility ---------------------------------------------------------
+export { SIGNAL_KEY_TYPES, RESERVED_KEYS, resolveDisconnectCause, readStatusCode } from './compat/baileys.js';
+export type { SignalKeyType } from './compat/baileys.js';

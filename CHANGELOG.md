@@ -26,6 +26,10 @@ The v2 rewrite. Tracked phase by phase in `docs/REWRITE-v2-PLAN.md`.
 - `scripts/generate-vectors.mjs` — the reference implementation of the algorithms in
   `spec/algorithms.md`.
 - Spec integrity test suite.
+- Phase 1 foundation: `WhatsMultiError` with spec-driven codes, an injectable
+  `Logger` interface with a zero-dependency default, validated and frozen
+  configuration, a typed event bus, a plugin registry, and `src/compat/baileys.ts`
+  as the single Baileys touch point.
 - CI: spec-drift gate, Node 20/22/24 matrix, a Bun job, `publint` + `attw` package
   shape validation, and a daily job that runs the suite against the current Baileys
   release.
