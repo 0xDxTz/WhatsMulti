@@ -31,7 +31,7 @@ export const LAYERS = {
     // client layer -- but not past it. Session internals, storage and the driver are
     // the client's business, and a server that reached them would be a second, subtly
     // different way to run a session.
-    'src/server/**': ['session', 'storage', 'auth', 'messaging', 'compat'],
+    'src/server/**': ['session', 'auth', 'compat'],
     'src/utils/**': ['session', 'storage', 'auth', 'messaging', 'events', 'plugin', 'client', 'compat'],
     // The lock contract is a leaf, like storage: adapters implement it, and it must
     // not reach back into the session layer that consumes it.

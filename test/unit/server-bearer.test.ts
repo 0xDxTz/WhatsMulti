@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { WhatsMultiError } from '../../src/errors.js';
 import { ERROR_HTTP_STATUS } from '../../src/generated/index.js';
-import { readBearer, resolveTokens, tokenMatches } from '../../src/server/auth.js';
+import { readBearer, resolveTokens, tokenMatches } from '../../src/server/bearer.js';
 import { toErrorResponse } from '../../src/server/http.js';
 
 describe('readBearer', () => {
@@ -25,7 +25,7 @@ describe('readBearer', () => {
         ['Bearer', 'no token'],
         ['Bearer ', 'a blank token'],
         ['Bearertoken', 'no separator'],
-    ])('returns null for %s (%s)', (header) => {
+    ])('returns null for %s (%s)', (header, _label) => {
         expect(readBearer(header)).toBeNull();
     });
 });

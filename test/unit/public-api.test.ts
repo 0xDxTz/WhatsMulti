@@ -7,6 +7,7 @@ import * as mongo from '../../src/adapters/mongo/index.js';
 import * as redis from '../../src/adapters/redis/index.js';
 import * as sqlAdapter from '../../src/adapters/sql/index.js';
 import * as qr from '../../src/qr/index.js';
+import * as serverEntry from '../../src/server/index.js';
 import * as webhookEntry from '../../src/webhook/index.js';
 import { ERROR_CODES, LIFECYCLE_EVENTS } from '../../src/generated/index.js';
 
@@ -238,6 +239,7 @@ describe('the webhook entry point', () => {
             'SIGNATURE_HEADER',
             'buildEnvelope',
             'encodeEnvelope',
+            'encodeEvent',
             'isRetryableStatus',
             'parseRetryAfter',
             'parseSignatureHeader',
@@ -274,5 +276,46 @@ describe('the webhook entry point', () => {
     it('stays out of the main entry point', () => {
         expect(Object.keys(api)).not.toContain('webhook');
         expect(Object.keys(api)).not.toContain('DeliveryQueue');
+    });
+});
+
+/**
+ * The control plane. Its own subpath because Hono is a peer nobody importing the
+ * library for its sessions should have to install.
+ */
+describe('the server entry point', () => {
+    it('exports the factory and the pieces a host may need', () => {
+        expect(Object.keys(serverEntry).sort()).toEqual([
+            'LiveState',
+            'METRICS_CONTENT_TYPE',
+            'RequestCounter',
+            'bearerAuth',
+            'createServer',
+            'escapeLabel',
+            'loadHono',
+            'readBearer',
+            'renderMetrics',
+            'resolveTokens',
+            'routeTemplate',
+            'setHonoLoader',
+            'toErrorResponse',
+            'tokenMatches',
+        ]);
+    });
+
+    it('is published on the exports map, resting on the optional hono peer', () => {
+        const manifest = JSON.parse(readFileSync('package.json', 'utf8')) as {
+            exports: Record<string, unknown>;
+            peerDependenciesMeta: Record<string, { optional?: boolean }>;
+        };
+        expect(manifest.exports['./server']).toEqual({
+            types: './dist/server/index.d.ts',
+            default: './dist/server/index.js',
+        });
+        expect(manifest.peerDependenciesMeta['hono']?.optional).toBe(true);
+    });
+
+    it('stays out of the main entry point', () => {
+        expect(Object.keys(api)).not.toContain('createServer');
     });
 });

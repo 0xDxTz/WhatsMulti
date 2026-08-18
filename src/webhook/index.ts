@@ -43,6 +43,7 @@ export {
 export {
     buildEnvelope,
     encodeEnvelope,
+    encodeEvent,
     FORWARDABLE_EVENTS,
     toWebhookEvents,
     wireName,

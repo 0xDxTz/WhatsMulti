@@ -1,6 +1,9 @@
 /**
  * Bearer-token authentication.
  *
+ * Named `bearer` rather than `auth` so it cannot be confused with src/auth, which is
+ * the Signal credential store and has nothing to do with this.
+ *
  * The control plane starts sessions, sends messages and hands out QR codes. Whoever
  * reaches it can take over a WhatsApp account, so authentication is on by default and
  * turning it off is an explicit, named decision -- `insecure: true` -- rather than the

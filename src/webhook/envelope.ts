@@ -85,3 +85,12 @@ export function buildEnvelope(instanceId: string, events: readonly WebhookEvent[
 export function encodeEnvelope(envelope: WebhookEnvelope): string {
     return JSON.stringify(envelope, bufferReplacer);
 }
+
+/**
+ * One event, encoded the same way. The SSE stream frames events individually, and
+ * using a second encoder there would mean a receiver could tell a webhook delivery
+ * from a stream frame by how its binary arrived.
+ */
+export function encodeEvent(event: WebhookEvent): string {
+    return JSON.stringify(event, bufferReplacer);
+}
