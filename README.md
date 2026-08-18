@@ -1,5 +1,12 @@
 # @Dutakey/WhatsMulti
 
+> [!IMPORTANT]
+> **This is the `v2` branch — a full rewrite in progress.**
+> The documentation below describes the v1 API, which now lives under `legacy/` and
+> is not built on this branch. See [`docs/REWRITE-v2-PLAN.md`](docs/REWRITE-v2-PLAN.md)
+> for the plan, and [`spec/`](spec/) for the cross-runtime contract shared with the
+> planned Go implementation.
+
 ![NPM Downloads](https://img.shields.io/npm/dw/%40dutakey%2Fwhatsmulti?label=npm&color=%23CB3837)
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/dutakey/whatsmulti)
 
