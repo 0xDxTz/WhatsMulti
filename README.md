@@ -1,595 +1,634 @@
-# @Dutakey/WhatsMulti
+# @dutakey/whatsmulti
 
-> [!IMPORTANT]
-> **This is the `v2` branch — a full rewrite in progress.**
-> The documentation below describes the v1 API, which now lives under `legacy/` and
-> is not built on this branch. See [`docs/REWRITE-v2-PLAN.md`](docs/REWRITE-v2-PLAN.md)
-> for the plan, and [`spec/`](spec/) for the cross-runtime contract shared with the
-> planned Go implementation.
+Multi-session WhatsApp orchestration for Node.js, built on
+[Baileys](https://github.com/WhiskeySockets/Baileys).
 
-![NPM Downloads](https://img.shields.io/npm/dw/%40dutakey%2Fwhatsmulti?label=npm&color=%23CB3837)
-![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/dutakey/whatsmulti)
+[![npm](https://img.shields.io/npm/v/%40dutakey%2Fwhatsmulti/next?label=npm%20next&color=%23CB3837)](https://www.npmjs.com/package/@dutakey/whatsmulti)
+[![npm downloads](https://img.shields.io/npm/dw/%40dutakey%2Fwhatsmulti?label=downloads&color=%23CB3837)](https://www.npmjs.com/package/@dutakey/whatsmulti)
+[![node](https://img.shields.io/node/v/%40dutakey%2Fwhatsmulti/next?label=node)](https://nodejs.org)
 
-## 📌 Overview
-
-@Dutakey/WhatsMulti is a powerful wrapper for [@whiskeysockets/baileys](https://github.com/WhiskeySockets/Baileys), designed to efficiently manage multiple WhatsApp Web sessions. It offers advanced session handling, flexible event listeners, and various storage options, making it ideal for developers integrating WhatsApp into their applications.
-
-## 🚀 Installation
-
-Install via npm:
+> **v2 is a full rewrite and is breaking.** Coming from v1, read
+> [`MIGRATION.md`](MIGRATION.md) — the API changed shape, not just names.
+> v2 is published under the `next` dist-tag while Baileys 7 is in release candidate.
 
 ```sh
-npm install @dutakey/whatsmulti
+npm install @dutakey/whatsmulti@next @whiskeysockets/baileys
 ```
 
-Or using yarn:
+---
 
-```sh
-yarn add @dutakey/whatsmulti
-```
+## What this is
 
-## ✨ Key Features
+A **multi-session orchestration layer over a WhatsApp Web protocol driver**. It owns
+four things and deliberately nothing else:
 
-- **Seamless Multi-Session Management**: Effortlessly create, manage, and maintain multiple WhatsApp sessions.
-- **Flexible Storage Options**: Store sessions locally, in memory, or integrate with databases like MongoDB.
-- **Robust Event Handling**: Easily handle events across multiple sessions for real-time monitoring.
-- **QR Code Generation**: Automatically generate QR codes for session authentication.
-- **Message Sending**: Send various types of messages (text, images, etc.) across sessions.
-- **Session Lifecycle Management**: Start, stop, restart, and delete sessions programmatically.
+1. **Session lifecycle** — create, start, stop, restart, logout, delete N connections
+   in one process, deterministically.
+2. **Auth persistence** — pluggable storage with identical semantics on every backend.
+3. **Event routing** — every driver event, plus lifecycle events, tagged with a
+   `sessionId`.
+4. **Safe sending** — JID normalisation, a per-session queue, backpressure.
 
-## 📋 Table of Contents
+It is not a bot framework, not a fork of Baileys, and not a message store. The raw
+socket stays exposed (`client.session(id).socket`) precisely so the parts this package
+does not wrap remain reachable.
 
-- [Quick Start](#-quick-start)
-- [Configuration](#-configuration)
-- [API Reference](#-api-reference)
-- [Session Management](#-session-management)
-- [Event Handling](#-event-handling)
-- [Message Operations](#-message-operations)
-- [Storage Options](#-storage-options)
-- [Examples](#-examples)
-- [TypeScript Support](#-typescript-support)
-- [Contributing](#-contributing)
-- [License](#-license)
+Everything else — webhooks, REST, database adapters, QR rendering — lives behind a
+subpath export and costs nothing until it is imported.
 
-## 🚀 Quick Start
+| Import                        | Contains                              | Peer                      |
+| ----------------------------- | ------------------------------------- | ------------------------- |
+| `@dutakey/whatsmulti`         | sessions, auth, events, messaging     | `@whiskeysockets/baileys` |
+| `@dutakey/whatsmulti/qr`      | QR to terminal / SVG / PNG / data URL | `qrcode`                  |
+| `@dutakey/whatsmulti/mongo`   | MongoDB storage + lock                | `mongodb`                 |
+| `@dutakey/whatsmulti/redis`   | Redis storage + lock                  | `ioredis`                 |
+| `@dutakey/whatsmulti/sql`     | PostgreSQL / MySQL / SQLite + lock    | `drizzle-orm` + a driver  |
+| `@dutakey/whatsmulti/webhook` | signed HTTP event forwarder           | none                      |
+| `@dutakey/whatsmulti/server`  | REST + SSE control plane              | `hono`                    |
 
-```typescript
-import WhatsMulti from '@dutakey/whatsmulti';
+The core has **zero runtime dependencies**. A missing optional peer throws a typed
+`MISSING_PEER` error naming the exact install command, rather than a module-resolution
+stack trace.
+
+---
+
+## Requirements
+
+- **Node >= 20** (also tested on Bun). ESM only — `require()` is not supported.
+- **Baileys `>=7.0.0-rc14 <8`**, installed by you. It is a peer dependency so that you
+  own the version, including a fork or a pin. v7 is required: it introduces the LID
+  identity system and three auth key types a v6-shaped auth state cannot persist.
+
+---
+
+## Quick start
+
+```ts
+import { WhatsMulti } from '@dutakey/whatsmulti';
+import { printQr } from '@dutakey/whatsmulti/qr';
 
 const client = new WhatsMulti({
-    mongoUri: 'mongodb://localhost:27017/whatsmulti-db', // Optional
-    defaultConnectionType: 'local', // 'local' | 'mongodb' | 'memory'
+    storage: 'file', // the default; credentials survive a restart
+    logLevel: 'info',
 });
 
-// Create and start a session
-await client.createSession('my-session', 'local', {
-    printQR: true, // Print QR code to console
+client.on('qr', ({ qr }, { sessionId }) => {
+    console.log(`[${sessionId}] scan this`);
+    void printQr(qr);
 });
 
-await client.startSession('my-session');
-
-// Listen for events
-client.on('open', (_, { sessionId }) => {
-    console.log(`Session ${sessionId} is connected!`);
+client.on('session.state', ({ from, to }, { sessionId }) => {
+    console.log(`[${sessionId}] ${from} -> ${to}`);
 });
 
-client.on('messages.upsert', async (data, { sessionId }) => {
-    const message = data.messages[0];
-    console.log('New message:', message);
+client.on('messages.upsert', async ({ messages }, { sessionId }) => {
+    const message = messages[0];
+    if (!message?.key.remoteJid || message.key.fromMe) return;
+    if (message.message?.conversation !== 'ping') return;
+
+    await client.send(sessionId, message.key.remoteJid, { text: 'pong' });
+});
+
+await client.createSession('personal');
+await client.start('personal');
+
+process.on('SIGINT', () => void client.destroy().then(() => process.exit(0)));
+```
+
+`start()` resolves once the socket is wired, **not** once the connection is open — an
+unpaired session waits in `awaiting_scan` for a scan that may never come. Wait on the
+`open` event, or on `session.state`, for that.
+
+More in [`examples/`](examples).
+
+---
+
+## Sessions
+
+```ts
+await client.createSession('sales'); // register; storage is prepared
+await client.ensureSession('sales'); // or: create, or return the existing one
+await client.start('sales'); // open the socket
+await client.stop('sales'); // close it; the device stays linked
+await client.restart('sales');
+await client.logout('sales'); // unlink from the phone, then drop local data
+await client.remove('sales'); // drop local data; the device stays linked
+```
+
+**`logout` and `remove` are different operations.** v1 had one call doing both, so
+asking for local cleanup silently unlinked the phone. Removing a session leaves the
+device paired; logging out ends the pairing and cannot be undone without a new scan.
+A failed unlink keeps the credentials so the logout can be retried.
+
+Introspection:
+
+```ts
+client.ids(); // registered session ids
+client.has('sales');
+client.size;
+client.find('sales'); // Session | undefined
+client.session('sales'); // Session, or throws SESSION_NOT_FOUND
+client.session('sales').state; // 'idle' | 'connecting' | 'awaiting_scan' | 'open' | ...
+client.session('sales').socket; // the raw Baileys socket, once open
+client.session('sales').queueSize;
+
+await client.meta('sales'); // { sessionId, storage, createdAt, updatedAt } | null
+await client.discover(); // ids in storage, including ones never opened here
+await client.load(); // register every stored session, with bounded fan-out
+```
+
+### The state machine
+
+```
+idle ──▶ connecting ──▶ awaiting_scan ──▶ open ──▶ closing ──▶ closed
+                                                      │
+                                                      ▼
+                                                 logged_out
+```
+
+States, triggers and legal transitions are compiled from
+[`spec/states.yaml`](spec/states.yaml) — they are not hand-written here and are
+identical in the planned Go build. An illegal transition throws `ILLEGAL_TRANSITION`
+rather than silently corrupting the session's idea of itself.
+
+### Reconnection
+
+Every disconnect cause is mapped to one of three actions — reconnect, purge
+credentials, or stop — from [`spec/disconnect-causes.yaml`](spec/disconnect-causes.yaml).
+Reconnects use full-jitter exponential backoff, verified against shared vectors.
+
+```ts
+new WhatsMulti({
+    reconnect: {
+        enabled: true,
+        baseMs: 1_000,
+        capMs: 60_000,
+        floorMs: 250,
+        maxAttempts: 0, // 0 = unlimited
+    },
 });
 ```
 
-## ⚙️ Configuration
+A `loggedOut` disconnect purges the credentials instead of retrying. v1 reconnected
+only on `restartRequired`, immediately and forever, and never purged — so a device
+unlinked from the phone became an infinite reconnect loop against credentials that
+could never work again.
 
-### Constructor Options
+---
 
-```typescript
-interface ConfigType {
-    defaultConnectionType?: 'local' | 'mongodb' | 'memory';
-    localConnectionPath?: string;
-    LoggerLevel?: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
-    BaileysLoggerLevel?: 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
-    mongoUri?: string;
-}
+## Events
+
+Two kinds, one bus. **Lifecycle events** are ours; **driver events** keep their native
+Baileys names, because renaming `messages.upsert` would buy nothing and break every
+existing handler.
+
+Every listener receives `(data, meta)`, where `meta` is
+`{ sessionId, instanceId, ts, socket? }`.
+
+| Lifecycle event        | Payload                            |
+| ---------------------- | ---------------------------------- |
+| `qr`                   | `{ qr, attempt, expiresAt }`       |
+| `pairing.code`         | `{ code, phoneNumber, expiresAt }` |
+| `session.created`      | `{ storage }`                      |
+| `session.state`        | `{ from, to, reason? }`            |
+| `session.reconnecting` | `{ attempt, delayMs, cause }`      |
+| `session.logged_out`   | `{ cause }`                        |
+| `session.removed`      | `{ reason }`                       |
+| `session.fenced`       | `{ owner }`                        |
+| `session.error`        | `{ code, message }`                |
+
+```ts
+client.on('session.reconnecting', ({ attempt, delayMs, cause }, { sessionId }) => {
+    console.warn(`[${sessionId}] ${cause}: retry ${attempt} in ${delayMs}ms`);
+});
+
+client.once('open', (_, { sessionId }) => console.log(`${sessionId} connected`));
+client.off('qr', handler);
 ```
 
-### Socket Configuration
-
-```typescript
-interface SockConfig {
-    disableQRRetry?: boolean;
-    qrMaxWaitMs?: number;
-    printQR?: boolean;
-    // ... other Baileys SocketConfig options
-}
-```
-
-## 📚 API Reference
-
-### WhatsMulti Class
-
-#### Constructor
-
-```typescript
-new WhatsMulti(config?: ConfigType)
-```
-
-#### Methods
-
-##### Session Management
-
-```typescript
-// Create a new session
-await createSession(
-    id: string,
-    connectionType: 'local' | 'mongodb' | 'memory' = 'local',
-    socketConfig?: Partial<SockConfig>
-): Promise<void>
-
-// Start a session
-await startSession(id: string): Promise<void>
-
-// Stop a session
-await stopSession(id: string): Promise<void>
-
-// Restart a session
-await restartSession(id: string): Promise<void>
-
-// Delete a session
-await deleteSession(id: string): Promise<void>
-
-// Logout a session
-await logoutSession(id: string): Promise<void>
-
-// Get session information
-await getSession(id: string): Promise<SessionInstance | undefined>
-
-// Get all sessions
-await getSessions(): Promise<SessionInstance[]>
-
-// Get QR code for a session
-await getQr(id: string): Promise<{ image: string; qr: string } | undefined>
-
-// Load existing sessions
-await loadSessions(): Promise<void>
-```
-
-##### Message Operations
-
-```typescript
-// Send a message
-await sendMessage(
-    sessionId: string,
-    recipient: string | MessageType,
-    message: MessageContentType,
-    options?: MessageOptionsType
-): Promise<void>
-```
-
-## 🔧 Session Management
-
-### Creating Sessions
-
-Sessions can be created with different storage types:
-
-```typescript
-// Local storage (files)
-await client.createSession('session-1', 'local');
-
-// MongoDB storage
-await client.createSession('session-2', 'mongodb');
-
-// Memory storage (temporary)
-await client.createSession('session-3', 'memory');
-```
-
-### Session Lifecycle
-
-```typescript
-// Create and start
-await client.createSession('my-session', 'local', {
-    printQR: true,
-    qrMaxWaitMs: 60000,
-});
-await client.startSession('my-session');
-
-// Stop temporarily
-await client.stopSession('my-session');
-
-// Restart
-await client.restartSession('my-session');
-
-// Logout and clean up
-await client.logoutSession('my-session');
-
-// Completely remove
-await client.deleteSession('my-session');
-```
-
-### Loading Existing Sessions
-
-```typescript
-// Load all previously created sessions
-await client.loadSessions();
-```
-
-## 📡 Event Handling
-
-WhatsMulti extends EventEmitter and provides all Baileys events plus custom events:
-
-### Built-in Events
-
-```typescript
-// Connection events
-client.on('open', (data, { sessionId, socket }) => {
-    console.log(`Session ${sessionId} connected`);
-});
-
-client.on('close', (data, { sessionId }) => {
-    console.log(`Session ${sessionId} disconnected`);
-});
-
-client.on('connecting', (data, { sessionId }) => {
-    console.log(`Session ${sessionId} is connecting...`);
-});
-
-// QR Code event
-client.on('qr', (data, { sessionId }) => {
-    console.log(`QR Code for ${sessionId}:`, data.qr);
-    // data.image contains base64 image data
-});
-
-// Message events
-client.on('messages.upsert', (data, { sessionId, socket }) => {
-    data.messages.forEach(message => {
-        console.log(`New message in ${sessionId}:`, message);
-    });
-});
-
-// Contact events
-client.on('contacts.update', (contacts, { sessionId }) => {
-    console.log(`Contacts updated in ${sessionId}:`, contacts);
-});
-
-// Group events
-client.on('groups.update', (groups, { sessionId }) => {
-    console.log(`Groups updated in ${sessionId}:`, groups);
-});
-```
-
-### Event Processing
-
-You can also use the `process` method to handle all events in one place:
-
-```typescript
-client.process((events, { sessionId, socket }) => {
-    if (events['messages.upsert']) {
-        // Handle messages
-    }
-    if (events.qr) {
-        // Handle QR code
-    }
-    // Handle other events...
-});
-```
-
-## 💬 Message Operations
-
-### Sending Messages
-
-```typescript
-// Text message
-await client.sendMessage('session-1', '1234567890@s.whatsapp.net', {
-    text: 'Hello, World!'
-});
-
-// Reply to a message
-await client.sendMessage('session-1', originalMessage, {
-    text: 'This is a reply'
-}, {
-    quoted: originalMessage
-});
-
-// Image message
-await client.sendMessage('session-1', '1234567890@s.whatsapp.net', {
-    image: { url: 'https://example.com/image.jpg' },
-    caption: 'Check out this image!'
-});
-
-// Document message
-await client.sendMessage('session-1', '1234567890@s.whatsapp.net', {
-    document: { url: 'https://example.com/document.pdf' },
-    fileName: 'document.pdf',
-    mimetype: 'application/pdf'
-});
-```
-
-### Message Types
-
-WhatsMulti supports all Baileys message types:
-- Text messages
-- Image messages
-- Video messages
-- Audio messages
-- Document messages
-- Sticker messages
-- Location messages
-- Contact messages
-- And more...
-
-## 💾 Storage Options
-
-### Local Storage
-
-Sessions are stored as files in the local filesystem:
-
-```typescript
-const client = new WhatsMulti({
-    localConnectionPath: './sessions', // Default: './whatsmulti_sessions'
-});
-
-await client.createSession('my-session', 'local');
-```
-
-### MongoDB Storage
-
-Sessions are stored in a MongoDB database:
-
-```typescript
-const client = new WhatsMulti({
-    mongoUri: 'mongodb://localhost:27017/whatsmulti-db'
-});
-
-await client.createSession('my-session', 'mongodb');
-```
-
-### Memory Storage
-
-Sessions are stored in memory (lost on restart):
-
-```typescript
-await client.createSession('my-session', 'memory');
-```
-
-## 📂 Examples
-
-### Basic Multi-Session Bot
-
-```typescript
-import WhatsMulti from '@dutakey/whatsmulti';
-
-const client = new WhatsMulti({
-    mongoUri: 'mongodb://localhost:27017/whatsmulti-db',
-});
-
-// Create multiple sessions
-await client.createSession('business', 'mongodb', { printQR: true });
-await client.createSession('personal', 'local', { printQR: true });
-
-// Start all sessions
-await client.startSession('business');
-await client.startSession('personal');
-
-// Handle messages across all sessions
-client.on('messages.upsert', async (data, { sessionId }) => {
-    const msg = data.messages[0];
-    if (msg.key.fromMe) return;
-    
-    const text = msg.message?.conversation || '';
-    
-    if (text === 'ping') {
-        await client.sendMessage(sessionId, msg, {
-            text: `Pong from session: ${sessionId}`
-        });
+`process()` receives the driver's **buffered batch** intact, which is what Baileys
+works to provide and what v1 discarded by re-splitting it:
+
+```ts
+const unsubscribe = client.process((batch, meta) => {
+    for (const [name, payload] of Object.entries(batch)) {
+        console.log(meta.sessionId, name, payload);
     }
 });
 ```
 
-### Dynamic Session Management
+A listener that rejects is caught and logged as `LISTENER_FAILED`; it never becomes an
+unhandled rejection that takes the process down.
 
-```typescript
-import WhatsMulti from '@dutakey/whatsmulti';
+---
 
-const client = new WhatsMulti();
+## Sending
 
-// Load existing sessions on startup
-await client.loadSessions();
+```ts
+const sent = await client.send('sales', '628123456789', { text: 'hello' });
+await client.send('sales', '628123456789@s.whatsapp.net', { image: buffer, caption: 'hi' });
+await client.send('sales', '12036304@g.us', { text: 'to the group' });
+```
 
-client.on('messages.upsert', async (data, { sessionId }) => {
-    const msg = data.messages[0];
-    if (msg.key.fromMe) return;
-    
-    const text = msg.message?.conversation || '';
-    const [command, ...args] = text.split(' ');
-    
-    switch (command) {
-        case '/create':
-            const newSessionId = args[0] || `session-${Date.now()}`;
-            await client.createSession(newSessionId, 'local');
-            await client.startSession(newSessionId);
-            
-            client.sendMessage(sessionId, msg, {
-                text: `Created session: ${newSessionId}`
-            });
-            break;
-            
-        case '/list':
-            const sessions = await client.getSessions();
-            const sessionList = sessions.map(s => 
-                `${s.id}: ${s.status} (${s.connectionType})`
-            ).join('\n');
-            
-            client.sendMessage(sessionId, msg, {
-                text: `Active sessions:\n${sessionList}`
-            });
-            break;
-            
-        case '/qr':
-            const targetSession = args[0] || sessionId;
-            const qrData = await client.getQr(targetSession);
-            
-            if (qrData) {
-                const buffer = Buffer.from(qrData.image.replace(/^data:image\/png;base64,/, ''), 'base64');
-                client.sendMessage(sessionId, msg, {
-                    image: buffer,
-                    caption: `QR Code for session: ${targetSession}`
-                });
-            }
-            break;
-    }
+Recipients are normalised: a bare phone number becomes a JID, `+`, spaces and dashes
+are stripped, and a malformed one throws `INVALID_JID` or `INVALID_PHONE_NUMBER`
+before anything reaches the driver.
+
+Sends are **serialised per session** through a bounded queue. Two in flight at once
+mutate the same Signal session state concurrently, and the loser produces a message the
+recipient cannot decrypt. The queue also refuses work when full instead of growing
+until the process runs out of memory:
+
+```ts
+new WhatsMulti({
+    send: {
+        concurrency: 1, // per session; leave at 1 unless you know why
+        minDelayMs: 0, // spacing between sends, for rate limiting
+        timeoutMs: 30_000,
+        maxQueue: 1000, // beyond this, send() throws SEND_FAILED
+    },
 });
 ```
 
-### Event Logging and Monitoring
+Media:
 
-```typescript
-import WhatsMulti from '@dutakey/whatsmulti';
+```ts
+const buffer = await client.downloadMedia('sales', message);
+const stream = await client.downloadMediaStream('sales', message); // never fully in memory
+```
 
-const client = new WhatsMulti({
-    LoggerLevel: 'info',
-    BaileysLoggerLevel: 'error'
-});
+An expired media URL is refreshed through the driver's re-upload path rather than
+becoming a permanent failure.
 
-// Monitor all session events
-client.process((events, { sessionId }) => {
-    Object.entries(events).forEach(([event, data]) => {
-        console.log(`[${sessionId}] ${event}:`, data);
-    });
-});
+---
 
-// Specific event handlers
-client.on('open', (_, { sessionId }) => {
-    console.log(`✅ Session ${sessionId} connected successfully`);
-});
+## Pairing: QR or an 8-digit code
 
-client.on('close', (_, { sessionId }) => {
-    console.log(`❌ Session ${sessionId} disconnected`);
-});
+QR is the default. `@dutakey/whatsmulti/qr` renders it — Baileys 7 removed
+`printQRInTerminal`, and this replaces it:
 
-client.on('qr', (data, { sessionId }) => {
-    console.log(`📱 QR Code generated for ${sessionId}`);
-    // Save QR code or send to admin
+```ts
+import { printQr, toTerminal, toSvg, toBuffer, toDataURL } from '@dutakey/whatsmulti/qr';
+
+client.on('qr', async ({ qr, attempt, expiresAt }) => {
+    await printQr(qr); // to stdout
+    const png = await toBuffer(qr); // Buffer, for an HTTP response
 });
 ```
 
-## 🔷 TypeScript Support
+`new WhatsMulti({ qr: { print: true } })` wires `printQr` for every session, if that is
+all you need. `qr.timeoutMs` and `qr.maxAttempts` are honoured — v1 declared them in
+its types and never read them.
 
-WhatsMulti is built with TypeScript and provides full type definitions:
+Phone pairing codes need a started session that has produced at least one QR; the code
+is bound to that QR reference, which is also why it expires with it:
 
-```typescript
-import WhatsMulti, { 
-    ConfigType, 
-    SessionInstance, 
-    ConnectionType,
-    MessageContentType,
-    EventMap 
-} from '@dutakey/whatsmulti';
+```ts
+await client.start('sales');
+const code = await client.requestPairingCode('sales', '628123456789'); // 'ABCD-1234'
+```
 
-const config: ConfigType = {
-    defaultConnectionType: 'local',
-    LoggerLevel: 'info'
+---
+
+## Storage
+
+Five backends, one contract, one conformance suite they all pass.
+
+```ts
+import { memoryStorage, fileStorage } from '@dutakey/whatsmulti';
+
+new WhatsMulti({ storage: 'file' }); // ./whatsmulti_sessions
+new WhatsMulti({ storage: fileStorage({ path: '/var/lib/wa' }) });
+new WhatsMulti({ storage: 'memory' }); // tests, and nothing else
+```
+
+```ts
+import { MongoClient } from 'mongodb';
+import { mongoStorage, mongoLock } from '@dutakey/whatsmulti/mongo';
+
+const mongo = await new MongoClient(process.env.MONGO_URL!).connect();
+const db = mongo.db('whatsmulti');
+
+new WhatsMulti({ storage: mongoStorage({ db }), lockProvider: mongoLock({ db }) });
+```
+
+```ts
+import Redis from 'ioredis';
+import { redisStorage, redisLock } from '@dutakey/whatsmulti/redis';
+
+const redis = new Redis(process.env.REDIS_URL!);
+new WhatsMulti({ storage: redisStorage({ redis }), lockProvider: redisLock({ redis }) });
+```
+
+```ts
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { sqlStorage, sqlLock } from '@dutakey/whatsmulti/sql';
+
+const db = drizzle(process.env.DATABASE_URL!);
+new WhatsMulti({
+    storage: sqlStorage({ db, dialect: 'pg' }), // 'pg' | 'mysql' | 'sqlite'
+    lockProvider: sqlLock({ db, dialect: 'pg' }),
+});
+```
+
+A per-session override is possible, and is how one process can keep different accounts
+in different places:
+
+```ts
+await client.createSession('archive', { storage: fileStorage({ path: '/mnt/cold' }) });
+```
+
+### Writing your own
+
+Implement `StorageAdapter` and run the shared conformance suite against it. If that is
+green, the adapter is finished:
+
+```ts
+import type { StorageAdapter } from '@dutakey/whatsmulti';
+
+const myStorage: StorageAdapter = {
+    name: 'mine',
+    async init() {},
+    async get(key) {
+        /* ... */
+    },
+    async mget(keys) {
+        /* one entry per key, in order, null for anything missing */
+    },
+    async set(key, value) {},
+    async mset(entries) {},
+    async del(keys) {},
+    async keys(prefix) {
+        /* full keys, not suffixes */
+    },
+    async clear(prefix) {},
+    async close() {},
 };
+```
 
-const client = new WhatsMulti(config);
+`mget` and `mset` are required rather than optional: Baileys asks for thirty or more
+Signal keys in one call while resuming a session, and v1 issued a round trip per key.
+`init` and `close` are the only optional members.
 
-// Type-safe event handling
-client.on('messages.upsert', (data: EventMap['messages.upsert'], meta) => {
-    // data is properly typed
-    data.messages.forEach(message => {
-        // message is typed as WAMessage
-    });
+The suite lives in [`test/conformance/storage.ts`](test/conformance/storage.ts), and
+the lock counterpart in [`test/conformance/lock.ts`](test/conformance/lock.ts); the key
+layout they enforce is specified in [`spec/algorithms.md`](spec/algorithms.md) §3.
+
+---
+
+## Running more than one replica
+
+Sessions are fenced by a distributed lock. The lock is taken **before** the socket
+opens, renewed on a heartbeat, and losing it closes the socket immediately and emits
+`session.fenced`. Two replicas cannot hold the same session, which matters because two
+sockets on one account corrupt each other's Signal state.
+
+```ts
+new WhatsMulti({
+    lockProvider: redisLock({ redis }), // or mongoLock / sqlLock
+    lock: { enabled: true, ttlMs: 30_000, renewRatio: 0.33 },
 });
 ```
 
-## 🔧 Advanced Configuration
+The default is an **in-process** provider: it fences this client's sessions against
+each other and nothing else. One replica, one process — fine. Anything more needs a
+real provider.
 
-### Custom Logger Configuration
+The lock row shape is the one in
+[`spec/storage-schema.sql`](spec/storage-schema.sql), so a Go instance and a
+TypeScript instance sharing a database fence each other.
 
-```typescript
+---
+
+## Webhook forwarding
+
+```ts
+import { webhook } from '@dutakey/whatsmulti/webhook';
+
+client.use(
+    webhook({
+        url: 'https://example.com/hooks/whatsapp',
+        secret: process.env.WEBHOOK_SECRET!,
+        events: ['message.received', 'session.state'], // omit to forward everything
+        batchWindowMs: 0,
+        retry: { maxAttempts: 5, baseMs: 1_000, capMs: 60_000 },
+        onDeadLetter: (letter) => console.error('dropped', letter.reason, letter.events),
+    })
+);
+```
+
+Deliveries are posted **one at a time, in order**, retried on the same full-jitter
+schedule as reconnects, and signed:
+
+```
+x-whatsmulti-signature: t=1755500000,v1=<hex>
+signedPayload = "<t>.<raw body>"
+v1            = lowercase_hex(HMAC_SHA256(secret, signedPayload))
+```
+
+`t` is reused unchanged across retries, so a retry re-sends identical bytes. Verify in
+constant time and reject a timestamp outside your tolerance (300s is the default we
+document). The full envelope and the verification recipe are in
+[`spec/webhook.md`](spec/webhook.md); `verifySignature` is exported for a Node
+receiver.
+
+Events that never cross the wire (`creds.update`, and friends) are not forwarded, and
+driver-native names are normalised to their canonical wire names — a receiver written
+against the Go build works unchanged.
+
+---
+
+## REST + SSE control plane
+
+An optional HTTP surface, on Hono, so a non-Node service can drive sessions:
+
+```ts
+import { serve } from '@hono/node-server';
+import { createServer } from '@dutakey/whatsmulti/server';
+
+const app = await createServer({
+    client,
+    token: process.env.API_TOKEN!, // or a list, to rotate without a restart
+    version: '2.0.0-rc.1',
+});
+
+serve({ fetch: app.fetch, port: 3000 });
+```
+
+`app.fetch` is a web-standard handler: `@hono/node-server`, `Bun.serve` and
+`Deno.serve` all take it directly.
+
+| Method   | Route                         |
+| -------- | ----------------------------- |
+| `GET`    | `/sessions`                   |
+| `POST`   | `/sessions`                   |
+| `GET`    | `/sessions/{id}`              |
+| `DELETE` | `/sessions/{id}`              |
+| `POST`   | `/sessions/{id}/start`        |
+| `POST`   | `/sessions/{id}/stop`         |
+| `POST`   | `/sessions/{id}/restart`      |
+| `POST`   | `/sessions/{id}/logout`       |
+| `GET`    | `/sessions/{id}/qr`           |
+| `POST`   | `/sessions/{id}/pairing-code` |
+| `POST`   | `/sessions/{id}/messages`     |
+| `GET`    | `/events` (SSE)               |
+| `GET`    | `/healthz`                    |
+| `GET`    | `/metrics` (Prometheus)       |
+
+Authentication is on by default and bearer-based; serving without it takes an explicit
+`insecure: true`, and passing both a token and `insecure` is refused rather than
+resolved. `/healthz` and `/metrics` stay open — a liveness probe and a scraper are not
+API clients.
+
+Every response, including failures, carries the same `Error` shape, and the status per
+error code lives in [`spec/errors.yaml`](spec/errors.yaml) rather than in the server —
+an API client branching on 409 vs 422 never has to ask which runtime it is talking to.
+The contract itself is [`spec/openapi.yaml`](spec/openapi.yaml), and the test suite
+validates real responses against it.
+
+Stream frames are encoded by the webhook's own encoder, so a stream frame and a
+delivery describe the same event with the same bytes:
+
+```sh
+curl -N -H "Authorization: Bearer $API_TOKEN" \
+  'http://localhost:3000/events?session=sales&events=message.received'
+```
+
+---
+
+## Configuration
+
+Every key, its type and its default live in [`spec/config.yaml`](spec/config.yaml); a
+test asserts the defaults below equal the spec, so this build and the Go one cannot
+disagree about what "default" means. Configuration is validated and frozen at
+construction — an unknown value throws `INVALID_CONFIG` immediately.
+
+```ts
 const client = new WhatsMulti({
-    LoggerLevel: 'debug', // WhatsMulti logs
-    BaileysLoggerLevel: 'error', // Baileys logs
+    instanceId: 'worker-1', // defaults to host:pid:random
+    logger: pino(), // any pino-compatible logger
+    logLevel: 'info',
+    driverLogLevel: 'silent',
+
+    storage: 'file',
+    lockProvider: memoryLock(),
+    plugins: [webhook({ url, secret })],
+    socket: { browser: ['WhatsMulti', 'Chrome', '1.0'] }, // merged into every socket
+
+    reconnect: { enabled: true, baseMs: 1_000, capMs: 60_000, floorMs: 250, maxAttempts: 0 },
+    qr: { timeoutMs: 60_000, maxAttempts: 5, print: false },
+    pairing: { enabled: false, showNotification: true, clientDisplayName: 'Chrome (Linux)' },
+    send: { concurrency: 1, minDelayMs: 0, timeoutMs: 30_000, maxQueue: 1000 },
+    lock: { enabled: true, ttlMs: 30_000, renewRatio: 0.33 },
+    load: { concurrency: 8, autoStart: false },
 });
 ```
 
-### MongoDB Connection Options
+Session ids must match `^[A-Za-z0-9_-]{1,64}$`. The pattern excludes `:`, `/` and `%`
+on purpose, which is what makes the storage key layout exactly invertible.
 
-```typescript
-const client = new WhatsMulti({
-    mongoUri: 'mongodb://username:password@localhost:27017/whatsmulti-db?authSource=admin'
-});
-```
+---
 
-### Socket Configuration
+## Errors
 
-```typescript
-await client.createSession('my-session', 'local', {
-    printQR: false,
-    qrMaxWaitMs: 30000,
-    disableQRRetry: false,
-    // Any other Baileys SocketConfig options
-    browser: ['WhatsMulti', 'Chrome', '1.0.0'],
-    connectTimeoutMs: 60000,
-});
-```
+Every failure is a `WhatsMultiError` with a stable `code`. **Branch on the code, never
+on the message** — v1 threw bare strings that had to be matched by text.
 
-## 🐛 Error Handling
+```ts
+import { WhatsMultiError, isWhatsMultiError, hasErrorCode } from '@dutakey/whatsmulti';
 
-```typescript
 try {
-    await client.createSession('my-session', 'local');
-    await client.startSession('my-session');
+    await client.send('sales', to, { text: 'hi' });
 } catch (error) {
-    if (error.message === 'Session exists') {
-        console.log('Session already exists');
-    } else if (error.message === 'Invalid session id') {
-        console.log('Invalid session ID format');
-    } else {
-        console.error('Unexpected error:', error);
+    if (hasErrorCode(error, 'SESSION_NOT_READY')) {
+        // retryable: the session is reconnecting
+    } else if (isWhatsMultiError(error) && error.retryable) {
+        // ...
     }
 }
-
-// Handle connection errors
-client.on('close', async (data, { sessionId }) => {
-    console.log(`Session ${sessionId} disconnected, attempting to reconnect...`);
-    try {
-        await client.restartSession(sessionId);
-    } catch (error) {
-        console.error(`Failed to restart session ${sessionId}:`, error);
-    }
-});
 ```
 
-## 📋 Session ID Requirements
+| Code                    | Retryable | HTTP |
+| ----------------------- | --------- | ---- |
+| `SESSION_NOT_FOUND`     | no        | 404  |
+| `SESSION_EXISTS`        | no        | 409  |
+| `INVALID_SESSION_ID`    | no        | 422  |
+| `SESSION_NOT_READY`     | yes       | 409  |
+| `SESSION_LOCKED`        | yes       | 409  |
+| `SESSION_LOGGED_OUT`    | no        | 409  |
+| `SESSION_FAILED`        | yes       | 500  |
+| `STORAGE_ERROR`         | yes       | 500  |
+| `SEND_FAILED`           | yes       | 503  |
+| `LOGOUT_FAILED`         | yes       | 502  |
+| `MEDIA_DOWNLOAD_FAILED` | yes       | 502  |
+| `TIMEOUT`               | yes       | 504  |
+| `MISSING_PEER`          | no        | 501  |
+| `INVALID_CONFIG`        | no        | 422  |
+| `CLIENT_DESTROYED`      | no        | 503  |
+| `PAIRING_UNAVAILABLE`   | yes       | 409  |
+| `PAIRING_IN_PROGRESS`   | no        | 409  |
+| `INVALID_PHONE_NUMBER`  | no        | 422  |
+| `INVALID_JID`           | no        | 422  |
+| `LISTENER_FAILED`       | no        | 500  |
+| `ILLEGAL_TRANSITION`    | no        | 409  |
 
-Session IDs must follow these rules:
-- Only alphanumeric characters, hyphens, and underscores
-- No spaces or special characters
-- Validated by regex: `/^(?:[\w-]+)$/`
+The REST surface adds `INVALID_REQUEST` (400), `UNAUTHORIZED` (401), `ROUTE_NOT_FOUND`
+(404) and `INTERNAL_ERROR` (500). The authoritative list is
+[`spec/errors.yaml`](spec/errors.yaml).
 
-```typescript
-// Valid session IDs
-await client.createSession('my-session', 'local');
-await client.createSession('session_1', 'local');
-await client.createSession('business-bot', 'local');
+---
 
-// Invalid session IDs (will throw error)
-await client.createSession('my session', 'local'); // spaces not allowed
-await client.createSession('session@123', 'local'); // @ not allowed
+## Shutdown
+
+```ts
+await client.destroy();
 ```
 
-## 🎯 Contributing
+Stops every session, closes every adapter, disposes every plugin, and continues past
+individual failures. Ordered so plugins are still live while sessions shut down — a
+webhook forwarder has to see the final events, and flush them, before it is torn down.
+Idempotent, and safe to call from a signal handler. v1 had no shutdown path at all.
 
-Contributions are welcome! If you find a bug, have feature suggestions, or want to improve the project, feel free to open an issue or submit a pull request.
+---
 
-### Development Setup
+## The spec, and the Go port
 
-1. Clone the repository
-2. Install dependencies: `npm install`
-3. Build the project: `npm run build`
-4. Run linting: `npm run lint`
-5. Run the example: `npm run example`
+[`spec/`](spec) is a language-neutral contract: the session state machine, the
+disconnect cause table, error codes, event names, config keys, the REST contract, the
+webhook envelope, and the shared metadata and lock schema. Enums are **generated** into
+`src/generated/` — writing an enum twice is how two runtimes drift — and
+[`spec/vectors/`](spec/vectors) is the parity gate every implementation runs in its own
+suite.
 
-## 📄 License
+A Go implementation (`whatsmulti-go`, on
+[whatsmeow](https://github.com/tulir/whatsmeow)) is a first-class target and consumes
+this directory as a submodule. What is deliberately **not** shared is Signal auth
+storage: whatsmeow owns its `sqlstore` schema and Baileys owns its
+`AuthenticationCreds` shape, so a session paired under one runtime cannot be resumed by
+the other.
 
-This project is licensed under **MIT**, allowing free use, modification, and distribution.
+---
+
+## Development
+
+```sh
+npm ci
+npm run check        # gen:check + lint + typecheck + test
+npm run coverage
+npm run build
+npm run verify:pack  # publint + attw on the real tarball
+npm run docs         # typedoc -> docs/api
+```
+
+Anything under `spec/` requires a `spec/VERSION` bump; CI enforces it, and refuses to
+build if `src/generated/` and `spec/` have drifted apart.
+
+Releases are manual: bump `version`, write the `CHANGELOG.md` entry, then
+`git tag v2.0.0 && git push --tags`. The workflow refuses to publish when the tag and
+`package.json` disagree, and routes any prerelease to the `next` dist-tag.
+
+---
+
+## License
+
+[MIT](LICENSE) © DutaKey
