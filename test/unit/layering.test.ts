@@ -49,6 +49,8 @@ describe('layer boundaries are enforced', () => {
         ['src/adapters/redis/x.ts', "import { Session } from '../../session/session.js';"],
         ['src/webhook/x.ts', "import { Session } from '../session/session.js';"],
         ['src/webhook/x.ts', "import { memoryStorage } from '../storage/memory.js';"],
+        ['src/server/x.ts', "import { Session } from '../session/session.js';"],
+        ['src/server/x.ts', "import { memoryStorage } from '../storage/memory.js';"],
     ])('%s cannot import %s', async (filePath, code) => {
         expect(await restricted(filePath, code)).not.toEqual([]);
     });
@@ -66,6 +68,8 @@ describe('layer boundaries are enforced', () => {
         ['src/adapters/redis/x.ts', "import { storageKey } from '../../storage/namespace.js';"],
         ['src/webhook/x.ts', "import { bufferReplacer } from '../auth/codec.js';"],
         ['src/webhook/x.ts', "import type { Plugin } from '../plugin.js';"],
+        ['src/server/x.ts', "import { WhatsMulti } from '../client.js';"],
+        ['src/server/x.ts', "import { wireName } from '../webhook/envelope.js';"],
     ])('%s may import %s', async (filePath, code) => {
         expect(await restricted(filePath, code)).toEqual([]);
     });

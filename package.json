@@ -104,6 +104,7 @@
         "drizzle-orm": "^0.45.2",
         "eslint": "^9.39.2",
         "globals": "^16.5.0",
+        "hono": "^4.13.2",
         "ioredis": "^6.0.0",
         "mongodb": "^7.5.0",
         "prettier": "^3.6.2",

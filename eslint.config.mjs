@@ -27,6 +27,11 @@ export const LAYERS = {
     // binary codec, and owns no session, no socket and no storage -- a plugin that
     // could reach the client it is plugged into is a plugin that can deadlock it.
     'src/webhook/**': ['client', 'session', 'storage', 'messaging', 'compat', 'qr'],
+    // The control plane drives a client through its public facade, so it may reach the
+    // client layer -- but not past it. Session internals, storage and the driver are
+    // the client's business, and a server that reached them would be a second, subtly
+    // different way to run a session.
+    'src/server/**': ['session', 'storage', 'auth', 'messaging', 'compat'],
     'src/utils/**': ['session', 'storage', 'auth', 'messaging', 'events', 'plugin', 'client', 'compat'],
     // The lock contract is a leaf, like storage: adapters implement it, and it must
     // not reach back into the session layer that consumes it.
