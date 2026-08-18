@@ -63,7 +63,7 @@ jobs:
             - run: npm run typecheck
             - run: npm run test
             - run: npm run build
-            - run: npx publint
+            - run: npx publint --pack npm
             - run: npx attw --pack . --profile esm-only
 
             # A prerelease must never claim the `latest` dist-tag; that would push an

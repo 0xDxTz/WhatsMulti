@@ -98,11 +98,17 @@ jobs:
             # publint catches a malformed exports map; attw catches the type
             # resolution problems that only surface for consumers.
             #
+            # `--pack npm` is not cosmetic: publint picks its packer from whichever
+            # lockfile it finds, and bun.lock is committed here for the Bun job. This
+            # runner has no bun, so the default detection crashes with `spawn bun
+            # ENOENT` before it lints anything. npm is what actually publishes this
+            # package, so npm is what should pack it for inspection.
+            #
             # The esm-only profile is the honest one: v2 is ESM-only on Node >= 20,
             # so a CJS consumer reaching dynamic-import-only is the documented
             # outcome, and node10 resolution -- which cannot read an exports map at
             # all, and so cannot see the ./qr subpath -- is not a target.
-            - run: npx publint
+            - run: npx publint --pack npm
             - run: npx attw --pack . --profile esm-only
 
             # typedoc runs with treatWarningsAsErrors, so this fails on a broken link
