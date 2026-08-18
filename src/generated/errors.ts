@@ -1,5 +1,5 @@
 // Code generated from spec/errors.yaml by scripts/generate.mjs. DO NOT EDIT.
-// Spec version: 0.2.10
+// Spec version: 0.2.11
 
 export const ERROR_CODES = [
     'SESSION_NOT_FOUND',
@@ -21,8 +21,10 @@ export const ERROR_CODES = [
     'PAIRING_IN_PROGRESS',
     'INVALID_PHONE_NUMBER',
     'INVALID_JID',
+    'INVALID_REQUEST',
     'LISTENER_FAILED',
     'ILLEGAL_TRANSITION',
+    'INTERNAL_ERROR',
 ] as const;
 
 export type ErrorCode =
@@ -45,8 +47,10 @@ export type ErrorCode =
     | 'PAIRING_IN_PROGRESS'
     | 'INVALID_PHONE_NUMBER'
     | 'INVALID_JID'
+    | 'INVALID_REQUEST'
     | 'LISTENER_FAILED'
-    | 'ILLEGAL_TRANSITION';
+    | 'ILLEGAL_TRANSITION'
+    | 'INTERNAL_ERROR';
 
 /** Message templates. `{placeholder}` slots are filled by the error constructor. */
 export const ERROR_MESSAGES: Readonly<Record<ErrorCode, string>> = {
@@ -69,8 +73,10 @@ export const ERROR_MESSAGES: Readonly<Record<ErrorCode, string>> = {
     PAIRING_IN_PROGRESS: 'A pairing code is already pending for session {sessionId}',
     INVALID_PHONE_NUMBER: 'Invalid phone number: {detail}',
     INVALID_JID: 'Cannot derive a JID from {input}',
+    INVALID_REQUEST: 'Invalid request: {detail}',
     LISTENER_FAILED: 'An event listener for {event} failed: {detail}',
     ILLEGAL_TRANSITION: 'Session {sessionId} cannot move from {from} via {trigger}',
+    INTERNAL_ERROR: 'Unexpected failure: {detail}',
 };
 
 /** Whether repeating the identical call could plausibly succeed. */
@@ -94,8 +100,10 @@ export const ERROR_RETRYABLE: Readonly<Record<ErrorCode, boolean>> = {
     PAIRING_IN_PROGRESS: false,
     INVALID_PHONE_NUMBER: false,
     INVALID_JID: false,
+    INVALID_REQUEST: false,
     LISTENER_FAILED: false,
     ILLEGAL_TRANSITION: false,
+    INTERNAL_ERROR: true,
 };
 
 /**
@@ -122,6 +130,8 @@ export const ERROR_HTTP_STATUS: Readonly<Record<ErrorCode, number>> = {
     PAIRING_IN_PROGRESS: 409,
     INVALID_PHONE_NUMBER: 422,
     INVALID_JID: 422,
+    INVALID_REQUEST: 400,
     LISTENER_FAILED: 500,
     ILLEGAL_TRANSITION: 409,
+    INTERNAL_ERROR: 500,
 };

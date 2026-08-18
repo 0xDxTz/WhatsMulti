@@ -95,6 +95,13 @@ errors:
       message: 'Cannot derive a JID from {input}'
       retryable: false
       http: 422
+    # The REST surface needs a way to say "your request is malformed" that is not
+    # about configuration. Distinct from the INVALID_* codes above, which each name
+    # one specific field.
+    - code: INVALID_REQUEST
+      message: 'Invalid request: {detail}'
+      retryable: false
+      http: 400
     - code: LISTENER_FAILED
       message: 'An event listener for {event} failed: {detail}'
       retryable: false
@@ -103,3 +110,10 @@ errors:
       message: Session {sessionId} cannot move from {from} via {trigger}
       retryable: false
       http: 409
+    # The last resort. An unexpected throw still has to answer with a code a client
+    # can branch on, and mislabelling it as one of the specific failures above would
+    # send the caller looking in the wrong place.
+    - code: INTERNAL_ERROR
+      message: 'Unexpected failure: {detail}'
+      retryable: true
+      http: 500
