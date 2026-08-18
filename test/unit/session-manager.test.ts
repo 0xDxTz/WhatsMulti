@@ -106,6 +106,18 @@ describe('SessionManager.create', () => {
         expect(await h.storage.keys(sessionPrefix('a'))).toEqual([]);
     });
 
+    it('reads metadata from the overriding adapter, not the default one', async () => {
+        // Otherwise a session registered right here reports null, and the caller
+        // describes it with the default backend's name -- which is the wrong answer
+        // about where an account's credentials are written.
+        const override = { ...memoryStorage(), name: 'elsewhere' };
+        const h = harness();
+
+        await h.manager.create('a', { storage: override });
+
+        expect(await h.manager.meta('a')).toMatchObject({ sessionId: 'a', storage: 'elsewhere' });
+    });
+
     it('initialises the adapter before writing to it', async () => {
         const inner = memoryStorage();
         const init = vi.fn(() => Promise.resolve());

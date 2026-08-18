@@ -146,6 +146,34 @@ describe('sessions', () => {
         expect((body as { storage: string }).storage).toBe('memory');
     });
 
+    it('reports the backend the session actually landed on', async () => {
+        // The default backend here is named something else, so a session created with
+        // `storage: memory` is a genuine override -- and its metadata lives in that
+        // adapter. Reading the default registry reported no metadata at all, and the
+        // response then described the session with the default backend's name.
+        const client = new WhatsMulti({
+            logLevel: 'silent',
+            storage: { ...memoryStorage(), name: 'default-backend' },
+            socketFactory: fakeDriver().factory,
+        });
+        const app = await createServer({ client, token: TOKEN, version: '2.0.0-test' });
+
+        const response = await app.fetch(
+            new Request(`${BASE}/sessions`, {
+                method: 'POST',
+                headers: { authorization: `Bearer ${TOKEN}`, 'content-type': 'application/json' },
+                body: JSON.stringify({ id: 'session-1', storage: 'memory' }),
+            })
+        );
+        const body = (await response.json()) as { storage: string };
+
+        expect(response.status).toBe(201);
+        expect(body.storage).toBe('memory');
+
+        await app.close();
+        await client.destroy();
+    });
+
     it('refuses a backend it does not know', async () => {
         // Only the shorthands are reachable over HTTP. A custom adapter carries the
         // credentials the operator chose; an API caller naming one would be picking

@@ -47,6 +47,8 @@ export class SessionManager {
     readonly #socketFactory: SocketFactory | undefined;
     readonly #socketOptions: Partial<SocketConfig> | undefined;
     readonly #registry: SessionRegistry;
+    /** One registry per adapter, so an overriding backend keeps its own metadata. */
+    readonly #registries = new Map<StorageAdapter, SessionRegistry>();
 
     readonly #sessions = new Map<string, Session>();
     /** Every adapter handed to us, so destroy() can close each exactly once. */
@@ -62,6 +64,7 @@ export class SessionManager {
         this.#socketFactory = options.socketFactory;
         this.#socketOptions = options.socketOptions;
         this.#registry = new SessionRegistry(options.storage);
+        this.#registries.set(options.storage, this.#registry);
         this.#adapters.add(options.storage);
     }
 
@@ -110,7 +113,7 @@ export class SessionManager {
         this.#adapters.add(storage);
         await storage.init?.();
 
-        const registry = storage === this.#storage ? this.#registry : new SessionRegistry(storage);
+        const registry = this.#registryFor(storage);
         const existing = await registry.read(sessionId);
         const now = Date.now();
         await registry.write({
@@ -211,8 +214,18 @@ export class SessionManager {
         );
     }
 
+    /**
+     * Metadata for one session, read from the adapter that actually holds it.
+     *
+     * A session created with a storage override keeps its metadata in *that* adapter.
+     * Reading the default registry unconditionally reported null for a session
+     * registered right here, and every caller then fell back to describing it with the
+     * default backend's name -- the REST surface answered `"storage": "file"` for a
+     * session whose credentials were in memory.
+     */
     async meta(sessionId: string): Promise<SessionMeta | null> {
-        return this.#registry.read(sessionId);
+        const session = this.#sessions.get(sessionId);
+        return this.#registryFor(session?.storage ?? this.#storage).read(sessionId);
     }
 
     /**
@@ -259,12 +272,21 @@ export class SessionManager {
         return { sessionId, instanceId: this.#config.instanceId, ts: Date.now() };
     }
 
+    #registryFor(storage: StorageAdapter): SessionRegistry {
+        let registry = this.#registries.get(storage);
+        if (registry === undefined) {
+            registry = new SessionRegistry(storage);
+            this.#registries.set(storage, registry);
+        }
+        return registry;
+    }
+
     #emit<K extends 'session.created' | 'session.removed'>(sessionId: string, event: K, data: EventMap[K]): void {
         this.#emitter.emit(event, data, this.#meta(sessionId));
     }
 
     async #deregister(sessionId: string, session: Session, reason: 'deleted' | 'logged_out'): Promise<void> {
-        await new SessionRegistry(session.storage).remove(sessionId);
+        await this.#registryFor(session.storage).remove(sessionId);
         this.#sessions.delete(sessionId);
         this.#emit(sessionId, 'session.removed', { reason });
     }
