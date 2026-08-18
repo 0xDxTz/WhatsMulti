@@ -176,14 +176,14 @@ describe.each(backends)('useAuthState on %s storage', (_name, makeBackend) => {
     it('clears Signal keys while leaving credentials and metadata in place', async () => {
         const auth = await useAuthState({ sessionId: SESSION, storage });
         await auth.saveCreds();
-        await auth.setMeta({ backend: 'test' });
+        await storage.set(storageKey(SESSION, META_KEY), { backend: 'test' });
         await auth.state.keys.set({ session: { peer: Buffer.from('x') }, 'pre-key': { '1': SAMPLES['pre-key'] } });
 
         await auth.clearKeys();
 
         expect(await auth.state.keys.get('session', ['peer'])).toEqual({});
         expect(await storage.get(storageKey(SESSION, CREDS_KEY))).not.toBeNull();
-        expect(await auth.getMeta()).toEqual({ backend: 'test' });
+        expect(await storage.get(storageKey(SESSION, META_KEY))).toEqual({ backend: 'test' });
     });
 
     it('exposes the same reset through the Baileys clear() hook', async () => {
@@ -208,31 +208,12 @@ describe.each(backends)('useAuthState on %s storage', (_name, makeBackend) => {
     it('purge removes credentials, keys and metadata', async () => {
         const auth = await useAuthState({ sessionId: SESSION, storage });
         await auth.saveCreds();
-        await auth.setMeta({ backend: 'test' });
+        await storage.set(storageKey(SESSION, META_KEY), { backend: 'test' });
         await auth.state.keys.set({ session: { peer: Buffer.from('x') } });
 
         await auth.purge();
 
         expect(await storage.keys(sessionPrefix(SESSION))).toEqual([]);
-    });
-
-    it('stores and reads metadata', async () => {
-        const auth = await useAuthState({ sessionId: SESSION, storage });
-
-        expect(await auth.getMeta()).toBeNull();
-
-        await auth.setMeta({ storage: 'file', startedAt: 1755500000000 });
-
-        expect(await auth.getMeta()).toEqual({ storage: 'file', startedAt: 1755500000000 });
-    });
-
-    it('keeps metadata out of the Signal key space', async () => {
-        const auth = await useAuthState({ sessionId: SESSION, storage });
-        await auth.setMeta({ any: 'thing' });
-
-        const keys = await storage.keys(sessionPrefix(SESSION));
-
-        expect(keys).toEqual([storageKey(SESSION, META_KEY)]);
     });
 });
 

@@ -18,7 +18,7 @@ import type { StorageAdapter } from '../storage/adapter.js';
 import { parseStorageKey, sessionPrefix, storageKey } from '../storage/namespace.js';
 
 import { decodeValue, encodeValue } from './codec.js';
-import { CREDS_KEY, META_KEY, parseSignalKey, signalKey } from './keys.js';
+import { CREDS_KEY, parseSignalKey, signalKey } from './keys.js';
 
 export interface AuthStateOptions {
     readonly sessionId: string;
@@ -46,9 +46,6 @@ export interface AuthStateHandle {
      * credentials -- a real logout, not a transient failure.
      */
     purge(): Promise<void>;
-
-    getMeta<T>(): Promise<T | null>;
-    setMeta(value: unknown): Promise<void>;
 }
 
 /**
@@ -171,15 +168,6 @@ export async function useAuthState(options: AuthStateOptions): Promise<AuthState
         async purge() {
             await guard('clear session', () => storage.clear(prefix));
             logger.debug('purged auth state');
-        },
-
-        async getMeta<T>(): Promise<T | null> {
-            const raw = await guard('read meta', () => storage.get<unknown>(key(META_KEY)));
-            return raw === null ? null : (decodeValue(raw) as T);
-        },
-
-        async setMeta(value: unknown) {
-            await guard('write meta', () => storage.set(key(META_KEY), encodeValue(value)));
         },
     };
 }
