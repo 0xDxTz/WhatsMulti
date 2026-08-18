@@ -20,4 +20,4 @@ export {
     type ReconnectPolicyOptions,
     type ReconnectRefusal,
 } from './reconnect.js';
-export { createSocket, toDriverLogger, type SocketFactory, type SocketFactoryOptions } from './socket-factory.js';
+export { createSocket, type SocketFactory, type SocketFactoryOptions } from './socket-factory.js';

@@ -17,7 +17,7 @@ export const LAYERS = {
     'src/storage/**': ['session', 'messaging', 'events', 'auth', 'plugin', 'client', 'compat'],
     'src/auth/**': ['session', 'messaging', 'plugin', 'client'],
     'src/events/**': ['session', 'storage', 'auth', 'messaging', 'client'],
-    'src/messaging/**': ['client', 'storage'],
+    'src/messaging/**': ['client', 'session', 'storage'],
     'src/utils/**': ['session', 'storage', 'auth', 'messaging', 'events', 'plugin', 'client', 'compat'],
 };
 

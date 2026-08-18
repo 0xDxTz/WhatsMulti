@@ -4,7 +4,8 @@ import type { AuthenticationState, UserFacingSocketConfig, WASocket } from '../.
 import { setDriverLoader, type BaileysModule } from '../../src/compat/driver.js';
 import { DEFAULT_CONFIG, type ResolvedConfig } from '../../src/config.js';
 import type { Logger } from '../../src/logger.js';
-import { buildSocketConfig, createSocket, toDriverLogger } from '../../src/session/socket-factory.js';
+import { toDriverLogger } from '../../src/compat/driver-logger.js';
+import { buildSocketConfig, createSocket } from '../../src/session/socket-factory.js';
 
 afterEach(() => {
     setDriverLoader(null);

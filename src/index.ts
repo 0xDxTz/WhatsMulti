@@ -156,7 +156,6 @@ export {
     isSessionState,
     isTerminal,
     nextState,
-    toDriverLogger,
 } from './session/index.js';
 export type {
     BackoffConfig,
@@ -198,4 +197,5 @@ export type { Plugin, PluginContext, PluginEvents } from './plugin.js';
 export { SIGNAL_KEY_TYPES, RESERVED_KEYS, resolveDisconnectCause, readStatusCode } from './compat/baileys.js';
 export type { SignalKeyType } from './compat/baileys.js';
 export { loadDriver, setDriverLoader } from './compat/driver.js';
+export { toDriverLogger } from './compat/driver-logger.js';
 export type { BaileysModule, DriverLoader } from './compat/driver.js';

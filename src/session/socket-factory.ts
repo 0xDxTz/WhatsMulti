@@ -6,16 +6,11 @@
  * tests replace: `Session` takes a factory, so the whole lifecycle can be exercised
  * against a scripted stand-in with no network.
  */
-import type {
-    AuthenticationState,
-    ILogger,
-    SocketConfig,
-    UserFacingSocketConfig,
-    WASocket,
-} from '../compat/baileys.js';
+import type { AuthenticationState, SocketConfig, UserFacingSocketConfig, WASocket } from '../compat/baileys.js';
 import { loadDriver, type BaileysModule } from '../compat/driver.js';
+import { toDriverLogger } from '../compat/driver-logger.js';
 import type { ResolvedConfig } from '../config.js';
-import type { Logger, LogLevel } from '../logger.js';
+import type { Logger } from '../logger.js';
 
 export interface SocketFactoryOptions {
     readonly sessionId: string;
@@ -27,34 +22,6 @@ export interface SocketFactoryOptions {
 }
 
 export type SocketFactory = (options: SocketFactoryOptions) => Promise<WASocket>;
-
-/**
- * Adapts our logger to the driver's.
- *
- * The two interfaces are nearly identical -- both are pino-shaped -- but the driver
- * also reads `.level`, and its methods are `(obj, msg?)` only, where ours also accept
- * a bare message. The forwarding below picks the right overload so a plain string
- * from the driver does not end up serialised as an object.
- */
-export function toDriverLogger(logger: Logger, level: LogLevel): ILogger {
-    const forward =
-        (write: Logger['info']) =>
-        (obj: unknown, msg?: string): void => {
-            if (typeof obj === 'string') write(msg === undefined ? obj : `${obj} ${msg}`);
-            else if (msg === undefined) write(obj as object);
-            else write(obj as object, msg);
-        };
-
-    return {
-        level,
-        child: (bindings) => toDriverLogger(logger.child(bindings), level),
-        trace: forward(logger.trace),
-        debug: forward(logger.debug),
-        info: forward(logger.info),
-        warn: forward(logger.warn),
-        error: forward(logger.error),
-    };
-}
 
 /**
  * The driver options we set ourselves, before `socketOptions` is layered on top.
