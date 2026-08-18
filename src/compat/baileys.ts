@@ -9,12 +9,15 @@
  * Nothing outside this directory may import from '@whiskeysockets/baileys'.
  */
 import type {
+    AnyMessageContent,
     AuthenticationCreds,
     AuthenticationState,
     BaileysEventMap,
+    ConnectionState,
     SignalDataSet,
     SignalDataTypeMap,
     SocketConfig,
+    UserFacingSocketConfig,
     WAMessage,
     WAMessageKey,
     WASocket,
@@ -23,16 +26,25 @@ import type {
 import { BAILEYS_MESSAGE_TO_CAUSE, BAILEYS_STATUS_TO_CAUSE, type DisconnectCause } from '../generated/index.js';
 
 export type {
+    AnyMessageContent,
     AuthenticationCreds,
     AuthenticationState,
     BaileysEventMap,
+    ConnectionState,
     SignalDataSet,
     SignalDataTypeMap,
     SocketConfig,
+    UserFacingSocketConfig,
     WAMessage,
     WAMessageKey,
     WASocket,
 };
+
+/**
+ * The logger shape the driver expects. Derived from SocketConfig rather than imported
+ * from the driver's internal path, which the package's exports map does not publish.
+ */
+export type ILogger = SocketConfig['logger'];
 
 /**
  * Every key type in the Baileys v7 `SignalDataTypeMap`.
