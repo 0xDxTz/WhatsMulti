@@ -32,6 +32,7 @@ import { sendMessage } from '../messaging/send.js';
 import type { StorageAdapter } from '../storage/adapter.js';
 
 import { decideDisconnect, disconnectTrigger } from './disconnect.js';
+import { sessionLockKey, type LockProvider, type LockToken } from './lock.js';
 import { ReconnectPolicy } from './reconnect.js';
 import { createSocket, type SocketFactory } from './socket-factory.js';
 import { SessionMachine } from './state.js';
@@ -43,6 +44,11 @@ export interface SessionOptions {
     /** Shared with every other session; `meta.sessionId` is what separates them. */
     readonly emitter: WMEventEmitter;
     readonly logger: Logger;
+    /**
+     * Shared with every other session on the same client. Omit to run unfenced,
+     * which is only safe when nothing else can open this session.
+     */
+    readonly lockProvider?: LockProvider | undefined;
     /** Replaced in tests by a scripted socket. */
     readonly socketFactory?: SocketFactory | undefined;
     readonly socketOptions?: Partial<SocketConfig> | undefined;
@@ -67,11 +73,14 @@ export class Session {
     #queue: SendQueue;
     readonly #factory: SocketFactory;
     readonly #socketOptions: Partial<SocketConfig> | undefined;
+    readonly #lockProvider: LockProvider | undefined;
 
     #auth: AuthStateHandle | undefined;
     #socket: WASocket | undefined;
     #detach: (() => void) | undefined;
     #timer: ReturnType<typeof setTimeout> | undefined;
+    #held: LockToken | undefined;
+    #heartbeat: ReturnType<typeof setTimeout> | undefined;
 
     /** Set by stop, destroy and QR exhaustion: a close we asked for must not retry. */
     #suppressReconnect = false;
@@ -88,6 +97,7 @@ export class Session {
         this.#logger = options.logger.child({ module: 'session', sessionId: options.sessionId });
         this.#factory = options.socketFactory ?? createSocket;
         this.#socketOptions = options.socketOptions;
+        this.#lockProvider = options.lockProvider;
         this.#policy = new ReconnectPolicy({ config: options.config.reconnect, random: options.random });
         this.#queue = this.#newQueue();
         this.#machine = new SessionMachine({
@@ -133,6 +143,11 @@ export class Session {
         return this.#destroyed;
     }
 
+    /** The lock this session holds, if it holds one. Undefined while stopped. */
+    get lock(): LockToken | undefined {
+        return this.#held;
+    }
+
     // ------------------------------------------------------------------- lifecycle
 
     /**
@@ -149,6 +164,9 @@ export class Session {
         if (this.#queue.closed) this.#queue = this.#newQueue();
 
         try {
+            // Before the socket, never after: a socket opened while another instance
+            // holds the session has already begun writing the Signal key store.
+            await this.#acquireLock();
             await this.#openSocket();
         } catch (error) {
             this.#machine.tryApply('disconnected');
@@ -169,6 +187,9 @@ export class Session {
         await this.#queue.drain();
 
         await this.#closeSocket();
+        // Released after the socket is down, so nothing of ours is still on the wire
+        // when another instance is told it may start.
+        await this.#releaseLock();
         this.#machine.tryApply('stopped');
     }
 
@@ -201,6 +222,7 @@ export class Session {
         }
 
         await this.#closeSocket();
+        await this.#releaseLock();
         this.#machine.tryApply('logged_out');
         await this.#purgeAuth();
         this.#emit('session.logged_out', { cause: 'logged_out' });
@@ -447,6 +469,130 @@ export class Session {
     #clearTimer(): void {
         if (this.#timer !== undefined) clearTimeout(this.#timer);
         this.#timer = undefined;
+    }
+
+    // ------------------------------------------------------------------- fencing
+
+    /**
+     * Takes the session lock, or refuses to start.
+     *
+     * Held across reconnects rather than re-taken per socket: dropping it during a
+     * backoff would invite another instance in during exactly the window where this
+     * one still intends to come back.
+     */
+    async #acquireLock(): Promise<void> {
+        const lock = this.#lockProvider;
+        if (lock === undefined || !this.#config.lock.enabled || this.#held !== undefined) return;
+
+        const key = sessionLockKey(this.sessionId);
+        const held = await lock.acquire(key, this.#config.lock.ttlMs, this.#config.instanceId);
+
+        if (held === null) {
+            throw new WhatsMultiError('SESSION_LOCKED', {
+                sessionId: this.sessionId,
+                params: { sessionId: this.sessionId, owner: await this.#ownerOf(key) },
+            });
+        }
+
+        this.#held = held;
+        this.#scheduleRenew();
+    }
+
+    /** Who holds the lock, for an error message. Never throws: this is reporting. */
+    async #ownerOf(key: string): Promise<string> {
+        try {
+            return (await this.#lockProvider?.inspect(key))?.owner ?? 'another instance';
+        } catch (cause) {
+            this.#logger.debug({ err: cause }, 'lock inspect failed');
+            return 'another instance';
+        }
+    }
+
+    #scheduleRenew(): void {
+        this.#clearHeartbeat();
+        // spec/config.yaml#lock.renew_ratio. At the default 0.33 a renew has roughly
+        // three attempts before the lease runs out.
+        const delay = Math.max(1, Math.floor(this.#config.lock.ttlMs * this.#config.lock.renewRatio));
+
+        this.#heartbeat = setTimeout(() => void this.#renew(), delay);
+        // The heartbeat must never be the reason a process stays alive: an idle
+        // program holding a lock should still be allowed to exit.
+        this.#heartbeat.unref?.();
+    }
+
+    #clearHeartbeat(): void {
+        if (this.#heartbeat !== undefined) clearTimeout(this.#heartbeat);
+        this.#heartbeat = undefined;
+    }
+
+    async #renew(): Promise<void> {
+        this.#heartbeat = undefined;
+
+        const lock = this.#lockProvider;
+        const held = this.#held;
+        if (lock === undefined || held === undefined || this.#destroyed) return;
+
+        let renewed: LockToken | null;
+        try {
+            renewed = await lock.renew(held, this.#config.lock.ttlMs);
+        } catch (cause) {
+            // A backend that failed to answer is not proof we were fenced, so this
+            // retries -- but only while the lease we already hold is still valid.
+            // Once it lapses we can no longer prove ownership, and continuing to run
+            // on a lock we cannot demonstrate is the split-brain this exists to stop.
+            this.#logger.warn({ err: cause }, 'lock renew failed');
+            if (Date.now() > held.expiresAt) await this.#onFenced(held);
+            else this.#scheduleRenew();
+            return;
+        }
+
+        if (renewed === null) {
+            await this.#onFenced(held);
+            return;
+        }
+
+        this.#held = renewed;
+        this.#scheduleRenew();
+    }
+
+    /**
+     * Another instance owns the session now. Fail-stop.
+     *
+     * The socket goes down before anything is announced: two processes on one session
+     * corrupt the Signal key store, so stopping is the urgent part and reporting is
+     * not. Reconnect is suppressed -- coming back would just take the lock away from
+     * whoever legitimately holds it.
+     */
+    async #onFenced(previous: LockToken): Promise<void> {
+        this.#held = undefined;
+        this.#suppressReconnect = true;
+        this.#clearHeartbeat();
+        this.#clearTimer();
+
+        this.#machine.tryApply('fenced');
+        await this.#closeSocket();
+
+        const owner = await this.#ownerOf(previous.key);
+        this.#logger.warn({ owner }, 'fenced');
+        this.#emit('session.fenced', { owner });
+    }
+
+    /**
+     * Gives the lock up. Failures are logged, never thrown: the caller is stopping,
+     * and an unreleased lock lapses by itself within the TTL.
+     */
+    async #releaseLock(): Promise<void> {
+        this.#clearHeartbeat();
+
+        const held = this.#held;
+        this.#held = undefined;
+        if (this.#lockProvider === undefined || held === undefined) return;
+
+        try {
+            await this.#lockProvider.release(held);
+        } catch (cause) {
+            this.#logger.warn({ err: cause, detail: describeError(cause) }, 'lock release failed');
+        }
     }
 
     /**
