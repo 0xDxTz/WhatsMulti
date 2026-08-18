@@ -3,6 +3,9 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 import * as api from '../../src/index.js';
+import * as mongo from '../../src/adapters/mongo/index.js';
+import * as redis from '../../src/adapters/redis/index.js';
+import * as sqlAdapter from '../../src/adapters/sql/index.js';
 import * as qr from '../../src/qr/index.js';
 import { ERROR_CODES, LIFECYCLE_EVENTS } from '../../src/generated/index.js';
 
@@ -181,5 +184,38 @@ describe('the qr entry point', () => {
             types: './dist/qr/index.d.ts',
             default: './dist/qr/index.js',
         });
+    });
+});
+
+/**
+ * The adapter entry points. Each is its own subpath so that installing the package
+ * never pulls in a database driver, and importing one is what says which driver a
+ * consumer has.
+ */
+describe('the adapter entry points', () => {
+    const manifest = JSON.parse(readFileSync('package.json', 'utf8')) as {
+        exports: Record<string, unknown>;
+        peerDependenciesMeta: Record<string, { optional?: boolean }>;
+    };
+
+    it.each([
+        ['./mongo', mongo, ['mongoLock', 'mongoStorage'], 'mongodb'],
+        ['./redis', redis, ['RELEASE_SCRIPT', 'RENEW_SCRIPT', 'redisLock', 'redisStorage'], 'ioredis'],
+        ['./sql', sqlAdapter, ['sqlLock', 'sqlStorage'], 'drizzle-orm'],
+    ])('%s exports its adapter pair and rests on an optional peer', (subpath, module, expected, peer) => {
+        expect(Object.keys(module).sort()).toEqual(expected);
+        expect(manifest.exports[subpath]).toEqual({
+            types: `./dist/adapters/${subpath.slice(2)}/index.d.ts`,
+            default: `./dist/adapters/${subpath.slice(2)}/index.js`,
+        });
+        expect(manifest.peerDependenciesMeta[peer]?.optional).toBe(true);
+    });
+
+    it('keeps the drivers out of the main entry point', () => {
+        // Importing the package must not require a database. The adapters are reached
+        // by subpath precisely so that installing one is a choice.
+        expect(Object.keys(api)).not.toContain('mongoStorage');
+        expect(Object.keys(api)).not.toContain('redisStorage');
+        expect(Object.keys(api)).not.toContain('sqlStorage');
     });
 });

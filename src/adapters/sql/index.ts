@@ -359,7 +359,9 @@ export function sqlStorage(options: SqlAdapterOptions): StorageAdapter {
             const scope = scopeOf(prefix);
             if (scope.empty === true) return;
 
-            await guard('clear', () => runner.run(sql`DELETE FROM ${table} WHERE ${scopeWhere(scope, options.dialect)}`));
+            await guard('clear', () =>
+                runner.run(sql`DELETE FROM ${table} WHERE ${scopeWhere(scope, options.dialect)}`)
+            );
         },
     };
 }

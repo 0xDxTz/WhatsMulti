@@ -18,6 +18,9 @@ export const LAYERS = {
     'src/auth/**': ['session', 'messaging', 'plugin', 'client'],
     'src/events/**': ['session', 'storage', 'auth', 'messaging', 'client'],
     'src/messaging/**': ['client', 'session', 'storage'],
+    // Adapters implement the storage and lock contracts and nothing else. One that
+    // could reach the session layer would be a backend with opinions about sessions.
+    'src/adapters/**': ['client', 'session', 'messaging', 'events', 'plugin', 'auth', 'compat', 'qr'],
     // The QR entry point is a leaf: it renders a string and knows nothing else.
     'src/qr/**': ['client', 'session', 'storage', 'auth', 'messaging', 'events', 'plugin', 'compat'],
     'src/utils/**': ['session', 'storage', 'auth', 'messaging', 'events', 'plugin', 'client', 'compat'],

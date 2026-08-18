@@ -17,6 +17,18 @@
             "types": "./dist/qr/index.d.ts",
             "default": "./dist/qr/index.js"
         },
+        "./mongo": {
+            "types": "./dist/adapters/mongo/index.d.ts",
+            "default": "./dist/adapters/mongo/index.js"
+        },
+        "./redis": {
+            "types": "./dist/adapters/redis/index.d.ts",
+            "default": "./dist/adapters/redis/index.js"
+        },
+        "./sql": {
+            "types": "./dist/adapters/sql/index.d.ts",
+            "default": "./dist/adapters/sql/index.js"
+        },
         "./package.json": "./package.json"
     },
     "types": "./dist/index.d.ts",

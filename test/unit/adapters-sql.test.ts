@@ -1,5 +1,7 @@
 import Database from 'better-sqlite3';
 import { sql, type SQL } from 'drizzle-orm';
+import { MySqlDialect } from 'drizzle-orm/mysql-core';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { describe, expect, it } from 'vitest';
 
@@ -162,5 +164,88 @@ describe('sql lock specifics', () => {
 
         await expect(store.get(storageKey('a', 'creds'))).resolves.toEqual({ me: 1 });
         await expect(lock.inspect('session:a')).resolves.toMatchObject({ owner: 'inst-1' });
+    });
+});
+
+/**
+ * PostgreSQL and MySQL cannot be reached without a server, so what is asserted here
+ * is the SQL text the adapter builds for them. That is the part that differs between
+ * dialects, and the part a SQLite run can never exercise.
+ */
+describe('the statements built for the server dialects', () => {
+    function recorder(): { db: SqlDatabase; queries: SQL[] } {
+        const queries: SQL[] = [];
+        return {
+            queries,
+            db: {
+                execute(query: SQL) {
+                    queries.push(query);
+                    return Promise.resolve({ rows: [] });
+                },
+            },
+        };
+    }
+
+    const compile = (dialect: 'pg' | 'mysql', query: SQL): string =>
+        (dialect === 'pg' ? new PgDialect() : new MySqlDialect()).sqlToQuery(query).sql;
+
+    it.each([
+        ['pg', 'ON CONFLICT (session_id, auth_key) DO UPDATE SET value = EXCLUDED.value'],
+        ['mysql', 'ON DUPLICATE KEY UPDATE value = VALUES(value)'],
+    ] as const)('upserts the way %s spells it', async (dialect, expected) => {
+        const { db, queries } = recorder();
+        const store = sqlStorage({ db, dialect });
+        await store.init?.();
+        queries.length = 0;
+
+        await store.set(storageKey('a', 'creds'), 1);
+
+        expect(compile(dialect, queries[0]!)).toContain(expected);
+    });
+
+    it.each([
+        // MySQL treats a backslash as an escape inside string literals; PostgreSQL,
+        // with standard_conforming_strings, does not. The same backslash therefore has
+        // to be written twice for one and once for the other.
+        ['pg', "ESCAPE '\\'"],
+        ['mysql', "ESCAPE '\\\\'"],
+    ] as const)('spells the LIKE escape the way %s needs it', async (dialect, expected) => {
+        const { db, queries } = recorder();
+        const store = sqlStorage({ db, dialect, migrate: false });
+
+        await store.keys(`${sessionPrefix('a')}pre`);
+
+        expect(compile(dialect, queries[0]!)).toContain(expected);
+    });
+
+    it.each(['pg', 'mysql'] as const)('creates the %s table with types that engine has', async (dialect) => {
+        const { db, queries } = recorder();
+
+        await sqlStorage({ db, dialect }).init?.();
+
+        const ddl = compile(dialect, queries[0]!);
+        expect(ddl).toContain('CREATE TABLE IF NOT EXISTS whatsmulti_auth');
+        expect(ddl).toContain('VARCHAR(64)');
+        expect(ddl).toContain(dialect === 'mysql' ? 'LONGTEXT' : 'TEXT');
+    });
+
+    it('reads a node-postgres result, which arrives under rows', async () => {
+        const db: SqlDatabase = {
+            execute: () => Promise.resolve({ rows: [{ session_id: 'a', auth_key: 'creds', value: '"v"' }] }),
+        };
+
+        await expect(sqlStorage({ db, dialect: 'pg', migrate: false }).get(storageKey('a', 'creds'))).resolves.toBe(
+            'v'
+        );
+    });
+
+    it('reads a mysql2 result, which arrives as [rows, fields]', async () => {
+        const db: SqlDatabase = {
+            execute: () => Promise.resolve([[{ session_id: 'a', auth_key: 'creds', value: '"v"' }], []]),
+        };
+
+        await expect(sqlStorage({ db, dialect: 'mysql', migrate: false }).get(storageKey('a', 'creds'))).resolves.toBe(
+            'v'
+        );
     });
 });

@@ -55,6 +55,13 @@ The v2 rewrite. Tracked phase by phase in `docs/REWRITE-v2-PLAN.md`.
   database fence each other; an in-process provider as the default; and fail-stop
   fencing in `Session` — the lock is taken before the socket opens, renewed on a
   heartbeat, and losing it closes the socket at once and emits `session.fenced`.
+- Phase 8 adapters: `@dutakey/whatsmulti/mongo`, `/redis` and `/sql`, each a storage
+  backend and a lock provider on its own subpath, so installing the package never
+  pulls in a database driver. The SQL one covers PostgreSQL, MySQL and SQLite through
+  Drizzle. All five storage backends and all four lock providers run the shared
+  conformance suites green.
+- `test/conformance/lock.ts` — the lock counterpart to the storage conformance suite.
+  A provider, including a third-party one, is finished when both are green.
 - `LOGOUT_FAILED`, `SESSION_FAILED` and `MEDIA_DOWNLOAD_FAILED` error codes, a
   `{detail}` slot on `SEND_FAILED`, and JID/phone normalisation
   matching whatsmeow's PairPhone validation.
