@@ -1,7 +1,11 @@
+import { Readable } from 'node:stream';
+
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { WhatsMulti, type WhatsMultiOptions } from '../../src/client.js';
+import type { WAMessage } from '../../src/compat/baileys.js';
 import { definePlugin } from '../../src/plugin.js';
+import type { Session } from '../../src/session/session.js';
 import { setQrLoader } from '../../src/qr/index.js';
 import type { StorageAdapter } from '../../src/storage/adapter.js';
 import { memoryStorage } from '../../src/storage/memory.js';
@@ -77,6 +81,15 @@ describe('construction', () => {
         expect(() => new WhatsMulti({ storage: 'sqlite' as never })).toThrow(
             expect.objectContaining({ code: 'INVALID_CONFIG' }) as Error
         );
+    });
+
+    it('exposes the pieces it assembled, for anything it does not delegate', async () => {
+        const h = harness();
+        const session = await h.client.createSession('a');
+
+        expect(h.client.logger).toBeDefined();
+        expect(h.client.events.listenerCount('qr')).toBe(0);
+        expect(h.client.sessions.get('a')).toBe(session);
     });
 
     it('passes socket options through to the driver', async () => {
@@ -220,6 +233,32 @@ describe('messaging', () => {
         await expect(h.client.send('a', '628123456789', { text: 'hi' })).rejects.toMatchObject({
             code: 'SESSION_NOT_READY',
         });
+    });
+
+    // Delegation only: what a download does, and how it refreshes an expired media
+    // URL, is covered against the driver in the messaging suite.
+    it('delegates a media download to the session', async () => {
+        const h = harness();
+        await opened(h);
+        const bytes = Buffer.from('media');
+        const message = { key: { id: 'M1' } } as WAMessage;
+        const download = vi.spyOn(h.client.session('a'), 'downloadMedia').mockResolvedValue(bytes);
+
+        await expect(h.client.downloadMedia('a', message, { startByte: 1 })).resolves.toBe(bytes);
+        expect(download).toHaveBeenCalledWith(message, { startByte: 1 });
+    });
+
+    it('delegates a streaming media download to the session', async () => {
+        const h = harness();
+        await opened(h);
+        const message = { key: { id: 'M1' } } as WAMessage;
+        const stream = Readable.from(['media']);
+        const download = vi
+            .spyOn(h.client.session('a'), 'downloadMediaStream')
+            .mockResolvedValue(stream as unknown as Awaited<ReturnType<Session['downloadMediaStream']>>);
+
+        await expect(h.client.downloadMediaStream('a', message)).resolves.toBe(stream);
+        expect(download).toHaveBeenCalledWith(message, undefined);
     });
 
     it('requests a pairing code once a QR has been issued', async () => {

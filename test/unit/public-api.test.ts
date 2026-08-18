@@ -1,6 +1,9 @@
+import { readFileSync } from 'node:fs';
+
 import { describe, expect, it } from 'vitest';
 
 import * as api from '../../src/index.js';
+import * as qr from '../../src/qr/index.js';
 import { ERROR_CODES, LIFECYCLE_EVENTS } from '../../src/generated/index.js';
 
 /**
@@ -10,6 +13,8 @@ import { ERROR_CODES, LIFECYCLE_EVENTS } from '../../src/generated/index.js';
  */
 describe('public surface', () => {
     const expected = [
+        // client
+        'WhatsMulti',
         // spec surface
         'SPEC_VERSION',
         'SESSION_STATES',
@@ -146,5 +151,33 @@ describe('public surface', () => {
     it('re-exports the generated constants by identity, not by copy', () => {
         expect(api.ERROR_CODES).toBe(ERROR_CODES);
         expect(api.LIFECYCLE_EVENTS).toBe(LIFECYCLE_EVENTS);
+    });
+});
+
+/**
+ * The second entry point. Pinned here rather than left to the packaging check,
+ * because a subpath that stops resolving is only visible to a consumer.
+ */
+describe('the qr entry point', () => {
+    it('exports exactly the renderers', () => {
+        expect(Object.keys(qr).sort()).toEqual([
+            'loadQrRenderer',
+            'printQr',
+            'setQrLoader',
+            'toBuffer',
+            'toDataURL',
+            'toSvg',
+            'toTerminal',
+        ]);
+    });
+
+    it('is published on the exports map', () => {
+        const manifest = JSON.parse(readFileSync('package.json', 'utf8')) as {
+            exports: Record<string, unknown>;
+        };
+        expect(manifest.exports['./qr']).toEqual({
+            types: './dist/qr/index.d.ts',
+            default: './dist/qr/index.js',
+        });
     });
 });

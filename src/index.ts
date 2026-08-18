@@ -6,6 +6,12 @@
  * implementation.
  */
 
+// --- client ------------------------------------------------------------------------
+// The QR renderer is deliberately not re-exported here: it lives on the `./qr`
+// subpath so that core keeps zero runtime dependencies.
+export { WhatsMulti } from './client.js';
+export type { WhatsMultiOptions } from './client.js';
+
 // --- spec surface (generated from spec/) -----------------------------------------
 export {
     SPEC_VERSION,

@@ -46,6 +46,10 @@ The v2 rewrite. Tracked phase by phase in `docs/REWRITE-v2-PLAN.md`.
 - Phase 5 messaging: a bounded, rate-limited per-session send queue, a send path with
   a deadline and typed failures, and a media downloader that can refresh an expired
   media URL instead of failing permanently.
+- Phase 6 facade: the `WhatsMulti` client — one instance-owned config, logger, event
+  bus, plugin registry and session manager — plus `@dutakey/whatsmulti/qr`, a second
+  entry point that renders a QR to the terminal, SVG or PNG behind the optional
+  `qrcode` peer. Baileys 7 removed `printQRInTerminal`; `qr.print` replaces it.
 - `LOGOUT_FAILED`, `SESSION_FAILED` and `MEDIA_DOWNLOAD_FAILED` error codes, a
   `{detail}` slot on `SEND_FAILED`, and JID/phone normalisation
   matching whatsmeow's PairPhone validation.
