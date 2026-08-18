@@ -1,5 +1,5 @@
 // Code generated from spec/states.yaml by scripts/generate.mjs. DO NOT EDIT.
-// Spec version: 0.2.7
+// Spec version: 0.2.8
 
 export const SESSION_STATES = [
     'idle',
@@ -23,6 +23,7 @@ export type SessionState =
 export const SESSION_TRIGGERS = [
     'connected',
     'disconnected',
+    'fenced',
     'logged_out',
     'qr',
     'qr_exhausted',
@@ -37,6 +38,7 @@ export const SESSION_TRIGGERS = [
 export type SessionTrigger =
     | 'connected'
     | 'disconnected'
+    | 'fenced'
     | 'logged_out'
     | 'qr'
     | 'qr_exhausted'
@@ -64,6 +66,7 @@ export const TRANSITIONS: Readonly<Record<string, SessionState>> = {
     'connecting:connected': 'open',
     'connecting:stop': 'closing',
     'connecting:disconnected': 'closed',
+    'connecting:fenced': 'closed',
     'connecting:logged_out': 'logged_out',
     'awaiting_scan:restart_required': 'connecting',
     'awaiting_scan:connected': 'open',
@@ -71,9 +74,11 @@ export const TRANSITIONS: Readonly<Record<string, SessionState>> = {
     'awaiting_scan:stop': 'closing',
     'awaiting_scan:disconnected': 'closed',
     'awaiting_scan:qr_exhausted': 'closed',
+    'awaiting_scan:fenced': 'closed',
     'awaiting_scan:logged_out': 'logged_out',
     'open:stop': 'closing',
     'open:disconnected': 'closed',
+    'open:fenced': 'closed',
     'open:logged_out': 'logged_out',
     'closing:stopped': 'closed',
     'closed:start': 'connecting',

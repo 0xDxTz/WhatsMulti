@@ -36,6 +36,7 @@ transitions:
     - { from: connecting, to: open, trigger: connected }
     - { from: connecting, to: closing, trigger: stop }
     - { from: connecting, to: closed, trigger: disconnected }
+    - { from: connecting, to: closed, trigger: fenced }
     - { from: connecting, to: logged_out, trigger: logged_out }
 
     - { from: awaiting_scan, to: connecting, trigger: restart_required }
@@ -44,10 +45,16 @@ transitions:
     - { from: awaiting_scan, to: closing, trigger: stop }
     - { from: awaiting_scan, to: closed, trigger: disconnected }
     - { from: awaiting_scan, to: closed, trigger: qr_exhausted }
+    - { from: awaiting_scan, to: closed, trigger: fenced }
     - { from: awaiting_scan, to: logged_out, trigger: logged_out }
 
     - { from: open, to: closing, trigger: stop }
     - { from: open, to: closed, trigger: disconnected }
+    # Another instance took the session lock. Fail-stop: the socket is closed at
+    # once, because two processes on one session corrupt the Signal key store.
+    # Lands in `closed` rather than a terminal state -- the session is intact, and
+    # starting it again once the other instance is gone is a deliberate decision.
+    - { from: open, to: closed, trigger: fenced }
     - { from: open, to: logged_out, trigger: logged_out }
 
     - { from: closing, to: closed, trigger: stopped }

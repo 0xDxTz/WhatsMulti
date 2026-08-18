@@ -1,5 +1,5 @@
 // Code generated from spec/events.yaml by scripts/generate.mjs. DO NOT EDIT.
-// Spec version: 0.2.7
+// Spec version: 0.2.8
 
 export const LIFECYCLE_EVENTS = [
     'qr',
