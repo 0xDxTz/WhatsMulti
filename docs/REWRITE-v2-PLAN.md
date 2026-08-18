@@ -1,7 +1,11 @@
 # WhatsMulti v2 — Rewrite Plan
 
-> Status: **Approved plan, not yet implemented**
+> Status: **Implemented.** Phases 0-11 shipped as `v2.0.0-rc.1`; phase 12 (the Go
+> port) is the remaining work and lives in its own repo.
 > Target branch: `v2`
+>
+> Kept as written rather than rewritten in the past tense: the value of this document
+> now is the reasoning behind each decision, which the code cannot carry.
 >
 > **Locked decisions**
 >
