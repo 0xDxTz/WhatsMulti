@@ -33,7 +33,7 @@ errors:
       message: Operation {operation} timed out after {timeoutMs}ms
       retryable: true
     - code: MISSING_PEER
-      message: '{feature} requires the optional peer dependency {peer}; install it with {install}'
+      message: '{feature} requires the peer dependency {peer}; install it with {install}'
       retryable: false
     - code: INVALID_CONFIG
       message: 'Invalid config at {path}: {detail}'

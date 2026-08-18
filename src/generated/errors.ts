@@ -1,5 +1,5 @@
 // Code generated from spec/errors.yaml by scripts/generate.mjs. DO NOT EDIT.
-// Spec version: 0.2.1
+// Spec version: 0.2.2
 
 export const ERROR_CODES = [
     'SESSION_NOT_FOUND',
@@ -53,7 +53,7 @@ export const ERROR_MESSAGES: Readonly<Record<ErrorCode, string>> = {
     STORAGE_ERROR: 'Storage adapter {adapter} failed: {detail}',
     SEND_FAILED: 'Failed to send message on session {sessionId}',
     TIMEOUT: 'Operation {operation} timed out after {timeoutMs}ms',
-    MISSING_PEER: '{feature} requires the optional peer dependency {peer}; install it with {install}',
+    MISSING_PEER: '{feature} requires the peer dependency {peer}; install it with {install}',
     INVALID_CONFIG: 'Invalid config at {path}: {detail}',
     CLIENT_DESTROYED: 'Client has been destroyed',
     PAIRING_UNAVAILABLE: 'Pairing code cannot be requested while session {sessionId} is {state}',
