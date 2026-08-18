@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { WhatsMulti, type WhatsMultiOptions } from '../../src/client.js';
 import type { WAMessage } from '../../src/compat/baileys.js';
 import { definePlugin } from '../../src/plugin.js';
-import { memoryLock, sessionLockKey } from '../../src/session/lock.js';
+import { memoryLock, sessionLockKey } from '../../src/lock.js';
 import type { Session } from '../../src/session/session.js';
 import { setQrLoader } from '../../src/qr/index.js';
 import type { StorageAdapter } from '../../src/storage/adapter.js';

@@ -21,4 +21,3 @@ export {
     type ReconnectRefusal,
 } from './reconnect.js';
 export { createSocket, type SocketFactory, type SocketFactoryOptions } from './socket-factory.js';
-export { memoryLock, sessionLockKey, type LockProvider, type LockToken, type MemoryLockOptions } from './lock.js';

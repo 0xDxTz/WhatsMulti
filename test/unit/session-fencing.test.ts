@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_CONFIG, type ResolvedConfig } from '../../src/config.js';
 import { WMEventEmitter } from '../../src/events/emitter.js';
 import { silentLogger } from '../../src/logger.js';
-import { memoryLock, sessionLockKey, type LockProvider, type LockToken } from '../../src/session/lock.js';
+import { memoryLock, sessionLockKey, type LockProvider, type LockToken } from '../../src/lock.js';
 import { Session } from '../../src/session/session.js';
 import { memoryStorage } from '../../src/storage/memory.js';
 import { fakeDriver } from '../fixtures/fake-socket.js';

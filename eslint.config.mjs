@@ -21,6 +21,9 @@ export const LAYERS = {
     // The QR entry point is a leaf: it renders a string and knows nothing else.
     'src/qr/**': ['client', 'session', 'storage', 'auth', 'messaging', 'events', 'plugin', 'compat'],
     'src/utils/**': ['session', 'storage', 'auth', 'messaging', 'events', 'plugin', 'client', 'compat'],
+    // The lock contract is a leaf, like storage: adapters implement it, and it must
+    // not reach back into the session layer that consumes it.
+    'src/lock.ts': ['session', 'storage', 'auth', 'messaging', 'events', 'plugin', 'client', 'compat'],
 };
 
 /**

@@ -158,8 +158,6 @@ export {
     disconnectTrigger,
     formatPairingCode,
     isPairable,
-    memoryLock,
-    sessionLockKey,
     isSendable,
     isSessionState,
     isTerminal,
@@ -169,9 +167,6 @@ export type {
     BackoffConfig,
     CreateSessionOptions,
     DisconnectDecision,
-    LockProvider,
-    LockToken,
-    MemoryLockOptions,
     ReconnectPlan,
     ReconnectPolicyOptions,
     ReconnectRefusal,
@@ -204,6 +199,10 @@ export type { DownloadRequest, KnownServer, ParsedJid, SendQueueOptions, SendReq
 export { mapLimit } from './utils/concurrency.js';
 export { withTimeout, type TimeoutOptions } from './utils/timeout.js';
 export { createRandom, mulberry32, randomSeed } from './utils/random.js';
+
+// --- locking ----------------------------------------------------------------------
+export { memoryLock, sessionLockKey } from './lock.js';
+export type { LockProvider, LockToken, MemoryLockOptions } from './lock.js';
 
 // --- plugins ----------------------------------------------------------------------
 export { PluginRegistry, definePlugin } from './plugin.js';

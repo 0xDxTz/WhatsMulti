@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { memoryLock, sessionLockKey, type LockProvider } from '../../src/session/lock.js';
+import { memoryLock, sessionLockKey, type LockProvider } from '../../src/lock.js';
 
 const TTL = 30_000;
 

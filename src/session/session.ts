@@ -24,6 +24,7 @@ import { WhatsMultiError, describeError, wrapError } from '../errors.js';
 import type { WMEventEmitter } from '../events/emitter.js';
 import type { EventBatch, EventMap, EventMeta, EventName } from '../events/types.js';
 import type { SessionState } from '../generated/index.js';
+import { sessionLockKey, type LockProvider, type LockToken } from '../lock.js';
 import type { Logger } from '../logger.js';
 import { normalizePhoneNumber } from '../messaging/jid.js';
 import { downloadMedia, downloadMediaStream, type DownloadRequest } from '../messaging/media.js';
@@ -32,7 +33,6 @@ import { sendMessage } from '../messaging/send.js';
 import type { StorageAdapter } from '../storage/adapter.js';
 
 import { decideDisconnect, disconnectTrigger } from './disconnect.js';
-import { sessionLockKey, type LockProvider, type LockToken } from './lock.js';
 import { ReconnectPolicy } from './reconnect.js';
 import { createSocket, type SocketFactory } from './socket-factory.js';
 import { SessionMachine } from './state.js';

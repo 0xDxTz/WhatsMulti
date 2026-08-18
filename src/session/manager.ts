@@ -10,11 +10,11 @@ import { assertValidSessionId, type ResolvedConfig } from '../config.js';
 import { WhatsMultiError, describeError } from '../errors.js';
 import type { WMEventEmitter } from '../events/emitter.js';
 import type { EventMap, EventMeta } from '../events/types.js';
+import type { LockProvider } from '../lock.js';
 import type { Logger } from '../logger.js';
 import type { StorageAdapter } from '../storage/adapter.js';
 import { mapLimit } from '../utils/concurrency.js';
 
-import type { LockProvider } from './lock.js';
 import { SessionRegistry, type SessionMeta } from './registry.js';
 import { Session } from './session.js';
 import type { SocketFactory } from './socket-factory.js';

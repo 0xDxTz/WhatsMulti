@@ -21,10 +21,10 @@ import { resolveConfig, type ResolvedConfig, type WhatsMultiConfig } from './con
 import { WhatsMultiError, describeError } from './errors.js';
 import { WMEventEmitter } from './events/emitter.js';
 import type { EventBatchListener, EventListener, EventName } from './events/types.js';
+import { memoryLock, type LockProvider } from './lock.js';
 import { resolveLogger, type Logger } from './logger.js';
 import { PluginRegistry, type Plugin } from './plugin.js';
 import { printQr } from './qr/index.js';
-import { memoryLock, type LockProvider } from './session/lock.js';
 import { SessionManager, type CreateSessionOptions } from './session/manager.js';
 import type { SessionMeta } from './session/registry.js';
 import type { Session } from './session/session.js';

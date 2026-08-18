@@ -45,6 +45,7 @@ describe('layer boundaries are enforced', () => {
         ['src/utils/x.ts', "import { WMEventEmitter } from '../events/emitter.js';"],
         ['src/generated/x.ts', "import { silentLogger } from '../logger.js';"],
         ['src/qr/x.ts', "import { Session } from '../session/session.js';"],
+        ['src/lock.ts', "import { Session } from './session/session.js';"],
     ])('%s cannot import %s', async (filePath, code) => {
         expect(await restricted(filePath, code)).not.toEqual([]);
     });
@@ -57,6 +58,7 @@ describe('layer boundaries are enforced', () => {
         ['src/events/x.ts', "import { WhatsMultiError } from '../errors.js';"],
         ['src/session/x.ts', "import { memoryStorage } from '../storage/memory.js';"],
         ['src/qr/x.ts', "import { WhatsMultiError } from '../errors.js';"],
+        ['src/lock.ts', "import { WhatsMultiError } from './errors.js';"],
     ])('%s may import %s', async (filePath, code) => {
         expect(await restricted(filePath, code)).toEqual([]);
     });
