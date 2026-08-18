@@ -118,6 +118,26 @@ export type {
     ParsedStorageKey,
 } from './storage/index.js';
 
+// --- auth --------------------------------------------------------------------------
+export {
+    useAuthState,
+    CREDS_KEY,
+    META_KEY,
+    RESERVED_KEY_NAMES,
+    STORAGE_KEYS,
+    isReservedKey,
+    isSignalKeyType,
+    parseSignalKey,
+    signalKey,
+    encodeValue,
+    decodeValue,
+    encodeJson,
+    decodeJson,
+    bufferReplacer,
+    bufferReviver,
+} from './auth/index.js';
+export type { AuthStateHandle, AuthStateOptions, EncodedBuffer, ParsedSignalKey } from './auth/index.js';
+
 // --- plugins ----------------------------------------------------------------------
 export { PluginRegistry, definePlugin } from './plugin.js';
 export type { Plugin, PluginContext, PluginEvents } from './plugin.js';
@@ -125,3 +145,5 @@ export type { Plugin, PluginContext, PluginEvents } from './plugin.js';
 // --- driver compatibility ---------------------------------------------------------
 export { SIGNAL_KEY_TYPES, RESERVED_KEYS, resolveDisconnectCause, readStatusCode } from './compat/baileys.js';
 export type { SignalKeyType } from './compat/baileys.js';
+export { loadDriver, setDriverLoader } from './compat/driver.js';
+export type { BaileysModule, DriverLoader } from './compat/driver.js';

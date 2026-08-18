@@ -106,4 +106,18 @@ describe('driver containment', () => {
     it('finds references inside src/compat, so the check is not vacuous', () => {
         expect(importers.length).toBeGreaterThan(0);
     });
+
+    it('keeps the driver out of the static module graph', () => {
+        // Every static import of Baileys must be type-only, so importing the package
+        // to read a constant or build a storage adapter does not load the driver.
+        // src/compat/driver.ts reaches it through a dynamic import instead.
+        const clauses = importers.flatMap((file) => [
+            ...readFileSync(file, 'utf8').matchAll(/^import\s+([\s\S]*?)from '@whiskeysockets\/baileys';/gm),
+        ]);
+
+        expect(clauses.length).toBeGreaterThan(0);
+        for (const [, clause] of clauses) {
+            expect(clause?.trimStart().startsWith('type')).toBe(true);
+        }
+    });
 });

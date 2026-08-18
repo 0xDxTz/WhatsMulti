@@ -33,6 +33,11 @@ The v2 rewrite. Tracked phase by phase in `docs/REWRITE-v2-PLAN.md`.
 - Phase 2 storage: a single `StorageAdapter` contract with required batch access, a
   namespaced and exactly-invertible key layout, in-memory and filesystem backends,
   and a shared conformance suite that every adapter must pass.
+- Phase 3 auth: one generic auth state built on `StorageAdapter`, replacing v1's
+  three near-duplicate implementations; a Buffer-preserving value codec that is
+  byte-compatible with Baileys' `BufferJSON`; unambiguous Signal key naming; and lazy
+  driver loading, so importing the package does not pull Baileys into the module
+  graph and a missing peer reports the install command.
 - CI: spec-drift gate, Node 20/22/24 matrix, a Bun job, `publint` + `attw` package
   shape validation, and a daily job that runs the suite against the current Baileys
   release.
@@ -52,6 +57,18 @@ The v2 rewrite. Tracked phase by phase in `docs/REWRITE-v2-PLAN.md`.
 - Release is manual and tag-driven, with a workflow that refuses to publish when the
   git tag and `package.json` version disagree, and routes prereleases to the `next`
   dist-tag instead of `latest`.
+
+### Fixed
+
+- Signal keys are read and written in batches. v1 issued one storage round trip per
+  key, and Baileys asks for thirty or more while resuming a session.
+- Stored key names parse correctly. v1 split `<type>-<id>` with a lazy regex, so
+  `pre-key-42` parsed as type `pre` with id `key-42`, and every key type except
+  `session` and `tctoken` came out wrong.
+- `app-state-sync-key` timestamps are revived as protobuf `Long`s rather than left as
+  the numbers JSON returns, which app-state key rotation compares against.
+- Resetting a corrupt Signal key store no longer removes credentials, so it no longer
+  unlinks the device.
 
 ### Removed
 

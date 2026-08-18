@@ -61,6 +61,22 @@ describe('public surface', () => {
         'storageKey',
         'parseStorageKey',
         'requireStorageKey',
+        // auth
+        'useAuthState',
+        'CREDS_KEY',
+        'META_KEY',
+        'RESERVED_KEY_NAMES',
+        'STORAGE_KEYS',
+        'isReservedKey',
+        'isSignalKeyType',
+        'parseSignalKey',
+        'signalKey',
+        'encodeValue',
+        'decodeValue',
+        'encodeJson',
+        'decodeJson',
+        'bufferReplacer',
+        'bufferReviver',
         // events
         'WMEventEmitter',
         // plugins
@@ -71,6 +87,8 @@ describe('public surface', () => {
         'RESERVED_KEYS',
         'resolveDisconnectCause',
         'readStatusCode',
+        'loadDriver',
+        'setDriverLoader',
     ] as const;
 
     it.each(expected)('exports %s', (name) => {
