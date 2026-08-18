@@ -29,6 +29,12 @@ errors:
     - code: SEND_FAILED
       message: Failed to send message on session {sessionId}
       retryable: true
+    # Distinct from a local delete: the device may still be linked to the phone, so
+    # the caller has to know the unlink did not land. Retryable because the stored
+    # credentials are deliberately kept when it fails.
+    - code: LOGOUT_FAILED
+      message: 'Failed to unlink session {sessionId} from the phone: {detail}'
+      retryable: true
     - code: TIMEOUT
       message: Operation {operation} timed out after {timeoutMs}ms
       retryable: true

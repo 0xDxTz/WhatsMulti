@@ -1,5 +1,5 @@
 // Code generated from spec/errors.yaml by scripts/generate.mjs. DO NOT EDIT.
-// Spec version: 0.2.2
+// Spec version: 0.2.3
 
 export const ERROR_CODES = [
     'SESSION_NOT_FOUND',
@@ -10,6 +10,7 @@ export const ERROR_CODES = [
     'SESSION_LOGGED_OUT',
     'STORAGE_ERROR',
     'SEND_FAILED',
+    'LOGOUT_FAILED',
     'TIMEOUT',
     'MISSING_PEER',
     'INVALID_CONFIG',
@@ -31,6 +32,7 @@ export type ErrorCode =
     | 'SESSION_LOGGED_OUT'
     | 'STORAGE_ERROR'
     | 'SEND_FAILED'
+    | 'LOGOUT_FAILED'
     | 'TIMEOUT'
     | 'MISSING_PEER'
     | 'INVALID_CONFIG'
@@ -52,6 +54,7 @@ export const ERROR_MESSAGES: Readonly<Record<ErrorCode, string>> = {
     SESSION_LOGGED_OUT: 'Session {sessionId} is logged out and must be paired again',
     STORAGE_ERROR: 'Storage adapter {adapter} failed: {detail}',
     SEND_FAILED: 'Failed to send message on session {sessionId}',
+    LOGOUT_FAILED: 'Failed to unlink session {sessionId} from the phone: {detail}',
     TIMEOUT: 'Operation {operation} timed out after {timeoutMs}ms',
     MISSING_PEER: '{feature} requires the peer dependency {peer}; install it with {install}',
     INVALID_CONFIG: 'Invalid config at {path}: {detail}',
@@ -74,6 +77,7 @@ export const ERROR_RETRYABLE: Readonly<Record<ErrorCode, boolean>> = {
     SESSION_LOGGED_OUT: false,
     STORAGE_ERROR: true,
     SEND_FAILED: true,
+    LOGOUT_FAILED: true,
     TIMEOUT: true,
     MISSING_PEER: false,
     INVALID_CONFIG: false,

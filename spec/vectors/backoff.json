@@ -1,5 +1,5 @@
 {
-  "specVersion": "0.2.2",
+  "specVersion": "0.2.3",
   "description": "Feed each config a fresh mulberry32 seeded with `seed`, then call backoff(attempt) for attempt 1..12. Delays must match exactly.",
   "prng": "mulberry32, spec/algorithms.md section 1",
   "configs": [
