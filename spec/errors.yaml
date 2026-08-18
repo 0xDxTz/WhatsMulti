@@ -110,6 +110,17 @@ errors:
       message: Session {sessionId} cannot move from {from} via {trigger}
       retryable: false
       http: 409
+    # The control plane's two transport-level failures. Both need a code because
+    # every response the contract describes carries the Error shape -- a bare 401 or
+    # a framework's default HTML 404 would be the one answer a client cannot parse.
+    - code: UNAUTHORIZED
+      message: A valid bearer token is required
+      retryable: false
+      http: 401
+    - code: ROUTE_NOT_FOUND
+      message: 'No route for {method} {path}'
+      retryable: false
+      http: 404
     # The last resort. An unexpected throw still has to answer with a code a client
     # can branch on, and mislabelling it as one of the specific failures above would
     # send the caller looking in the wrong place.

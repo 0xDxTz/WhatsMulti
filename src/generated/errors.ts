@@ -1,5 +1,5 @@
 // Code generated from spec/errors.yaml by scripts/generate.mjs. DO NOT EDIT.
-// Spec version: 0.2.11
+// Spec version: 0.2.12
 
 export const ERROR_CODES = [
     'SESSION_NOT_FOUND',
@@ -24,6 +24,8 @@ export const ERROR_CODES = [
     'INVALID_REQUEST',
     'LISTENER_FAILED',
     'ILLEGAL_TRANSITION',
+    'UNAUTHORIZED',
+    'ROUTE_NOT_FOUND',
     'INTERNAL_ERROR',
 ] as const;
 
@@ -50,6 +52,8 @@ export type ErrorCode =
     | 'INVALID_REQUEST'
     | 'LISTENER_FAILED'
     | 'ILLEGAL_TRANSITION'
+    | 'UNAUTHORIZED'
+    | 'ROUTE_NOT_FOUND'
     | 'INTERNAL_ERROR';
 
 /** Message templates. `{placeholder}` slots are filled by the error constructor. */
@@ -76,6 +80,8 @@ export const ERROR_MESSAGES: Readonly<Record<ErrorCode, string>> = {
     INVALID_REQUEST: 'Invalid request: {detail}',
     LISTENER_FAILED: 'An event listener for {event} failed: {detail}',
     ILLEGAL_TRANSITION: 'Session {sessionId} cannot move from {from} via {trigger}',
+    UNAUTHORIZED: 'A valid bearer token is required',
+    ROUTE_NOT_FOUND: 'No route for {method} {path}',
     INTERNAL_ERROR: 'Unexpected failure: {detail}',
 };
 
@@ -103,6 +109,8 @@ export const ERROR_RETRYABLE: Readonly<Record<ErrorCode, boolean>> = {
     INVALID_REQUEST: false,
     LISTENER_FAILED: false,
     ILLEGAL_TRANSITION: false,
+    UNAUTHORIZED: false,
+    ROUTE_NOT_FOUND: false,
     INTERNAL_ERROR: true,
 };
 
@@ -133,5 +141,7 @@ export const ERROR_HTTP_STATUS: Readonly<Record<ErrorCode, number>> = {
     INVALID_REQUEST: 400,
     LISTENER_FAILED: 500,
     ILLEGAL_TRANSITION: 409,
+    UNAUTHORIZED: 401,
+    ROUTE_NOT_FOUND: 404,
     INTERNAL_ERROR: 500,
 };
