@@ -1,3 +1,6 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { ESLint } from 'eslint';
 import tseslint from 'typescript-eslint';
 import { describe, expect, it } from 'vitest';
@@ -75,5 +78,32 @@ describe('layer boundaries are enforced', () => {
         const patterns = (layerConfigs[0]?.rules?.['no-restricted-imports'] as [string, { patterns: string[] }])[1]
             .patterns;
         expect(patterns.some((p) => p.endsWith('.js'))).toBe(true);
+    });
+});
+
+/**
+ * The layer rules above police our own directories. This one polices the driver
+ * itself: Baileys is on the 7.0.0-rc line and can break between release candidates,
+ * so an RC bump has to stay a one-directory diff. ESLint cannot express it without
+ * clobbering the per-directory `no-restricted-imports` above, so it is a test.
+ */
+describe('driver containment', () => {
+    const PEER = '@whiskeysockets/baileys';
+
+    const sourceFiles = (dir: string): string[] =>
+        readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+            const path = join(dir, entry.name);
+            if (entry.isDirectory()) return sourceFiles(path);
+            return entry.name.endsWith('.ts') ? [path] : [];
+        });
+
+    const importers = sourceFiles('src').filter((file) => readFileSync(file, 'utf8').includes(PEER));
+
+    it('confines every reference to the driver to src/compat', () => {
+        expect(importers.filter((file) => !file.startsWith(join('src', 'compat')))).toEqual([]);
+    });
+
+    it('finds references inside src/compat, so the check is not vacuous', () => {
+        expect(importers.length).toBeGreaterThan(0);
     });
 });
