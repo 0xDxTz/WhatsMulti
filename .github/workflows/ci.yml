@@ -98,11 +98,12 @@ jobs:
             # publint catches a malformed exports map; attw catches the type
             # resolution problems that only surface for consumers.
             #
-            # cjs-resolves-to-esm is ignored on purpose: v2 is ESM-only, so a CJS
-            # consumer reaching dynamic-import-only is the documented outcome, not a
-            # packaging defect.
+            # The esm-only profile is the honest one: v2 is ESM-only on Node >= 20,
+            # so a CJS consumer reaching dynamic-import-only is the documented
+            # outcome, and node10 resolution -- which cannot read an exports map at
+            # all, and so cannot see the ./qr subpath -- is not a target.
             - run: npx publint
-            - run: npx attw --pack . --ignore-rules cjs-resolves-to-esm
+            - run: npx attw --pack . --profile esm-only
 
     coverage:
         name: Coverage

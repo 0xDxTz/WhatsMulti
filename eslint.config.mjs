@@ -18,6 +18,8 @@ export const LAYERS = {
     'src/auth/**': ['session', 'messaging', 'plugin', 'client'],
     'src/events/**': ['session', 'storage', 'auth', 'messaging', 'client'],
     'src/messaging/**': ['client', 'session', 'storage'],
+    // The QR entry point is a leaf: it renders a string and knows nothing else.
+    'src/qr/**': ['client', 'session', 'storage', 'auth', 'messaging', 'events', 'plugin', 'compat'],
     'src/utils/**': ['session', 'storage', 'auth', 'messaging', 'events', 'plugin', 'client', 'compat'],
 };
 

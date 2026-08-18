@@ -64,7 +64,7 @@ jobs:
             - run: npm run test
             - run: npm run build
             - run: npx publint
-            - run: npx attw --pack . --ignore-rules cjs-resolves-to-esm
+            - run: npx attw --pack . --profile esm-only
 
             # A prerelease must never claim the `latest` dist-tag; that would push an
             # RC to every `npm install @dutakey/whatsmulti`. Relevant for as long as
