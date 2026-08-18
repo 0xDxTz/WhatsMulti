@@ -24,6 +24,7 @@ import type { EventBatchListener, EventListener, EventName } from './events/type
 import { resolveLogger, type Logger } from './logger.js';
 import { PluginRegistry, type Plugin } from './plugin.js';
 import { printQr } from './qr/index.js';
+import { memoryLock, type LockProvider } from './session/lock.js';
 import { SessionManager, type CreateSessionOptions } from './session/manager.js';
 import type { SessionMeta } from './session/registry.js';
 import type { Session } from './session/session.js';
@@ -42,6 +43,17 @@ export interface WhatsMultiOptions extends WhatsMultiConfig {
      * accident.
      */
     readonly storage?: StorageInput | undefined;
+    /**
+     * The session lock, shared by every session on this client.
+     *
+     * Defaults to a fresh in-process provider, which fences this client's sessions
+     * against each other and nothing else. Anything running more than one replica
+     * needs a distributed provider -- and two clients that must contend in one
+     * process have to be handed the same instance.
+     *
+     * Named apart from the `lock` config block, which holds the TTL and renew ratio.
+     */
+    readonly lockProvider?: LockProvider | undefined;
     /** Merged into every socket. Consumer keys win over ours. */
     readonly socket?: Partial<SocketConfig> | undefined;
     /** Registered before construction returns, so they are set up on first use. */
@@ -56,6 +68,7 @@ export class WhatsMulti {
     readonly #logger: Logger;
     readonly #emitter: WMEventEmitter;
     readonly #storage: StorageAdapter;
+    readonly #lockProvider: LockProvider;
     readonly #plugins = new PluginRegistry();
     readonly #manager: SessionManager;
 
@@ -73,11 +86,13 @@ export class WhatsMulti {
             ...(options.maxListeners === undefined ? {} : { maxListeners: options.maxListeners }),
         });
         this.#storage = resolveStorage(options.storage ?? 'file');
+        this.#lockProvider = options.lockProvider ?? memoryLock();
         this.#manager = new SessionManager({
             config: this.#config,
             storage: this.#storage,
             emitter: this.#emitter,
             logger: this.#logger,
+            lockProvider: this.#lockProvider,
             ...(options.socketFactory === undefined ? {} : { socketFactory: options.socketFactory }),
             ...(options.socket === undefined ? {} : { socketOptions: options.socket }),
         });
@@ -104,6 +119,11 @@ export class WhatsMulti {
     /** The default backend. Sessions created with an override do not use it. */
     get storage(): StorageAdapter {
         return this.#storage;
+    }
+
+    /** The session lock. Share it with another client to make the two contend. */
+    get lockProvider(): LockProvider {
+        return this.#lockProvider;
     }
 
     /** The bus itself, for anything the delegating methods below do not cover. */

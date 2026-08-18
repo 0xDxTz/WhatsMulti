@@ -14,6 +14,7 @@ import type { Logger } from '../logger.js';
 import type { StorageAdapter } from '../storage/adapter.js';
 import { mapLimit } from '../utils/concurrency.js';
 
+import type { LockProvider } from './lock.js';
 import { SessionRegistry, type SessionMeta } from './registry.js';
 import { Session } from './session.js';
 import type { SocketFactory } from './socket-factory.js';
@@ -24,6 +25,8 @@ export interface SessionManagerOptions {
     readonly storage: StorageAdapter;
     readonly emitter: WMEventEmitter;
     readonly logger: Logger;
+    /** Shared by every session, so they fence each other and any peer instance. */
+    readonly lockProvider?: LockProvider | undefined;
     readonly socketFactory?: SocketFactory | undefined;
     readonly socketOptions?: Partial<SocketConfig> | undefined;
 }
@@ -40,6 +43,7 @@ export class SessionManager {
     readonly #storage: StorageAdapter;
     readonly #emitter: WMEventEmitter;
     readonly #logger: Logger;
+    readonly #lockProvider: LockProvider | undefined;
     readonly #socketFactory: SocketFactory | undefined;
     readonly #socketOptions: Partial<SocketConfig> | undefined;
     readonly #registry: SessionRegistry;
@@ -54,6 +58,7 @@ export class SessionManager {
         this.#storage = options.storage;
         this.#emitter = options.emitter;
         this.#logger = options.logger.child({ module: 'manager' });
+        this.#lockProvider = options.lockProvider;
         this.#socketFactory = options.socketFactory;
         this.#socketOptions = options.socketOptions;
         this.#registry = new SessionRegistry(options.storage);
@@ -122,6 +127,7 @@ export class SessionManager {
             config: this.#config,
             emitter: this.#emitter,
             logger: this.#logger,
+            ...(this.#lockProvider === undefined ? {} : { lockProvider: this.#lockProvider }),
             ...(this.#socketFactory === undefined ? {} : { socketFactory: this.#socketFactory }),
             ...(socketOptions === undefined ? {} : { socketOptions }),
         });
@@ -237,6 +243,12 @@ export class SessionManager {
             }
         }
         this.#adapters.clear();
+
+        try {
+            await this.#lockProvider?.close?.();
+        } catch (cause) {
+            this.#logger.warn({ lock: this.#lockProvider?.name, detail: describeError(cause) }, 'lock close failed');
+        }
     }
 
     #assertAlive(): void {

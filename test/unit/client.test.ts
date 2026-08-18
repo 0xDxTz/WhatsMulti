@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { WhatsMulti, type WhatsMultiOptions } from '../../src/client.js';
 import type { WAMessage } from '../../src/compat/baileys.js';
 import { definePlugin } from '../../src/plugin.js';
+import { memoryLock, sessionLockKey } from '../../src/session/lock.js';
 import type { Session } from '../../src/session/session.js';
 import { setQrLoader } from '../../src/qr/index.js';
 import type { StorageAdapter } from '../../src/storage/adapter.js';
@@ -45,6 +46,7 @@ async function opened(h: Harness, sessionId = 'a'): Promise<void> {
 
 afterEach(() => {
     setQrLoader(null);
+    vi.useRealTimers();
     vi.restoreAllMocks();
 });
 
@@ -445,6 +447,130 @@ describe('qr printing', () => {
 
         expect(h.client.session('a').state).toBe('open');
         expect(h.of('session.error')).toEqual([]);
+    });
+});
+
+/**
+ * The gate for phase 7. Two clients, one lock provider, one storage backend -- the
+ * shape a cluster has, minus the network. Fencing is the one failure mode where
+ * getting it wrong corrupts data rather than dropping a message: two processes on one
+ * session write the same Signal key store, and neither session survives it.
+ */
+describe('two clients contending for one session', () => {
+    function pair(): { a: Harness; b: Harness } {
+        const lockProvider = memoryLock();
+        const storage = memoryStorage();
+
+        return {
+            a: harness({ instanceId: 'inst-a', lockProvider }, storage),
+            b: harness({ instanceId: 'inst-b', lockProvider }, storage),
+        };
+    }
+
+    it('lets only one of them start the session', async () => {
+        const { a, b } = pair();
+        await a.client.createSession('a');
+        await b.client.createSession('a');
+
+        await a.client.start('a');
+
+        await expect(b.client.start('a')).rejects.toMatchObject({ code: 'SESSION_LOCKED' });
+    });
+
+    it('tells the loser which instance holds it', async () => {
+        const { a, b } = pair();
+        await a.client.createSession('a');
+        await b.client.createSession('a');
+        await a.client.start('a');
+
+        const error = await b.client.start('a').catch((cause: unknown) => cause);
+
+        expect((error as Error).message).toContain('inst-a');
+    });
+
+    it('opens no socket for the loser', async () => {
+        const { a, b } = pair();
+        await a.client.createSession('a');
+        await b.client.createSession('a');
+        await a.client.start('a');
+
+        await b.client.start('a').catch(() => undefined);
+
+        expect(b.driver.sockets).toHaveLength(0);
+    });
+
+    it('hands the session over once the holder stops', async () => {
+        const { a, b } = pair();
+        await a.client.createSession('a');
+        await b.client.createSession('a');
+        await a.client.start('a');
+
+        await a.client.stop('a');
+
+        await expect(b.client.start('a')).resolves.toBeUndefined();
+        expect(a.client.lockProvider).toBe(b.client.lockProvider);
+    });
+
+    it('hands it over on destroy too, so a rolling deploy does not deadlock', async () => {
+        const { a, b } = pair();
+        await a.client.createSession('a');
+        await b.client.createSession('a');
+        await a.client.start('a');
+
+        await a.client.destroy();
+
+        await expect(b.client.start('a')).resolves.toBeUndefined();
+    });
+
+    it('does not let one client block a session another one owns', async () => {
+        const { a, b } = pair();
+        await a.client.createSession('a');
+        await b.client.createSession('b');
+
+        await a.client.start('a');
+
+        await expect(b.client.start('b')).resolves.toBeUndefined();
+    });
+
+    it('gives each client its own lock by default, which is why sharing is explicit', async () => {
+        const storage = memoryStorage();
+        const a = harness({ instanceId: 'inst-a' }, storage);
+        const b = harness({ instanceId: 'inst-b' }, storage);
+        await a.client.createSession('a');
+        await b.client.createSession('a');
+
+        await a.client.start('a');
+
+        // Not a bug: an in-memory lock cannot fence across processes either, so a
+        // default that pretended to would be worse than one that plainly does not.
+        await expect(b.client.start('a')).resolves.toBeUndefined();
+        expect(a.client.lockProvider).not.toBe(b.client.lockProvider);
+    });
+
+    it('fences the holder when the lock is taken from underneath it', async () => {
+        // Fake timers from the outset: the heartbeat is scheduled during start(), and
+        // a clock swapped in afterwards would never fire it.
+        vi.useFakeTimers();
+
+        const { a, b } = pair();
+        await a.client.createSession('a');
+        await b.client.createSession('a');
+        await a.client.start('a');
+        await a.driver.last.open();
+
+        const fenced: string[] = [];
+        a.client.on('session.fenced', (data, meta) => fenced.push(`${meta.sessionId}:${data.owner}`));
+
+        // What a stalled instance looks like from outside: its lease is gone and the
+        // peer has taken over. The holder finds out on its next heartbeat.
+        await a.client.lockProvider.release(a.client.session('a').lock!);
+        await b.client.lockProvider.acquire(sessionLockKey('a'), 30_000, 'inst-b');
+
+        await vi.advanceTimersByTimeAsync(30_000);
+
+        expect(fenced).toEqual(['a:inst-b']);
+        expect(a.client.session('a').state).toBe('closed');
+        expect(a.driver.last.ended).toBe(true);
     });
 });
 
