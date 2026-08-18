@@ -1,19 +1,25 @@
-# @dutakey/whatsmulti
+# whatsmulti
 
 Multi-session WhatsApp orchestration for Node.js, built on
 [Baileys](https://github.com/WhiskeySockets/Baileys).
 
-[![npm](https://img.shields.io/npm/v/%40dutakey%2Fwhatsmulti/next?label=npm%20next&color=%23CB3837)](https://www.npmjs.com/package/@dutakey/whatsmulti)
-[![npm downloads](https://img.shields.io/npm/dw/%40dutakey%2Fwhatsmulti?label=downloads&color=%23CB3837)](https://www.npmjs.com/package/@dutakey/whatsmulti)
-[![node](https://img.shields.io/node/v/%40dutakey%2Fwhatsmulti/next?label=node)](https://nodejs.org)
+[![npm](https://img.shields.io/npm/v/whatsmulti/next?label=npm%20next&color=%23CB3837)](https://www.npmjs.com/package/whatsmulti)
+[![npm downloads](https://img.shields.io/npm/dw/whatsmulti?label=downloads&color=%23CB3837)](https://www.npmjs.com/package/whatsmulti)
+[![node](https://img.shields.io/node/v/whatsmulti/next?label=node)](https://nodejs.org)
 
-> **v2 is a full rewrite and is breaking.** Coming from v1, read
-> [`MIGRATION.md`](MIGRATION.md) — the API changed shape, not just names.
-> v2 is published under the `next` dist-tag while Baileys 7 is in release candidate.
+> **v2 is a full rewrite and is breaking**, and the package moved:
+> v1 was published as `@dutakey/whatsmulti` and stays there, unchanged. v2 lives here,
+> under the `next` dist-tag while Baileys 7 is in release candidate.
+> Coming from v1, read [`MIGRATION.md`](MIGRATION.md) — the API changed shape, not
+> just names.
 
 ```sh
-npm install @dutakey/whatsmulti@next @whiskeysockets/baileys
+npm install whatsmulti@next @whiskeysockets/baileys
 ```
+
+The `@next` is required, not decorative: while v2 is a release candidate it is
+published under the `next` dist-tag only, and there is no `latest` for a plain
+`npm install whatsmulti` to resolve.
 
 ---
 
@@ -36,15 +42,15 @@ does not wrap remain reachable.
 Everything else — webhooks, REST, database adapters, QR rendering — lives behind a
 subpath export and costs nothing until it is imported.
 
-| Import                        | Contains                              | Peer                      |
-| ----------------------------- | ------------------------------------- | ------------------------- |
-| `@dutakey/whatsmulti`         | sessions, auth, events, messaging     | `@whiskeysockets/baileys` |
-| `@dutakey/whatsmulti/qr`      | QR to terminal / SVG / PNG / data URL | `qrcode`                  |
-| `@dutakey/whatsmulti/mongo`   | MongoDB storage + lock                | `mongodb`                 |
-| `@dutakey/whatsmulti/redis`   | Redis storage + lock                  | `ioredis`                 |
-| `@dutakey/whatsmulti/sql`     | PostgreSQL / MySQL / SQLite + lock    | `drizzle-orm` + a driver  |
-| `@dutakey/whatsmulti/webhook` | signed HTTP event forwarder           | none                      |
-| `@dutakey/whatsmulti/server`  | REST + SSE control plane              | `hono`                    |
+| Import               | Contains                              | Peer                      |
+| -------------------- | ------------------------------------- | ------------------------- |
+| `whatsmulti`         | sessions, auth, events, messaging     | `@whiskeysockets/baileys` |
+| `whatsmulti/qr`      | QR to terminal / SVG / PNG / data URL | `qrcode`                  |
+| `whatsmulti/mongo`   | MongoDB storage + lock                | `mongodb`                 |
+| `whatsmulti/redis`   | Redis storage + lock                  | `ioredis`                 |
+| `whatsmulti/sql`     | PostgreSQL / MySQL / SQLite + lock    | `drizzle-orm` + a driver  |
+| `whatsmulti/webhook` | signed HTTP event forwarder           | none                      |
+| `whatsmulti/server`  | REST + SSE control plane              | `hono`                    |
 
 The core has **zero runtime dependencies**. A missing optional peer throws a typed
 `MISSING_PEER` error naming the exact install command, rather than a module-resolution
@@ -64,8 +70,8 @@ stack trace.
 ## Quick start
 
 ```ts
-import { WhatsMulti } from '@dutakey/whatsmulti';
-import { printQr } from '@dutakey/whatsmulti/qr';
+import { WhatsMulti } from 'whatsmulti';
+import { printQr } from 'whatsmulti/qr';
 
 const client = new WhatsMulti({
     storage: 'file', // the default; credentials survive a restart
@@ -264,11 +270,11 @@ becoming a permanent failure.
 
 ## Pairing: QR or an 8-digit code
 
-QR is the default. `@dutakey/whatsmulti/qr` renders it — Baileys 7 removed
+QR is the default. `whatsmulti/qr` renders it — Baileys 7 removed
 `printQRInTerminal`, and this replaces it:
 
 ```ts
-import { printQr, toTerminal, toSvg, toBuffer, toDataURL } from '@dutakey/whatsmulti/qr';
+import { printQr, toTerminal, toSvg, toBuffer, toDataURL } from 'whatsmulti/qr';
 
 client.on('qr', async ({ qr, attempt, expiresAt }) => {
     await printQr(qr); // to stdout
@@ -295,7 +301,7 @@ const code = await client.requestPairingCode('sales', '628123456789'); // 'ABCD-
 Five backends, one contract, one conformance suite they all pass.
 
 ```ts
-import { memoryStorage, fileStorage } from '@dutakey/whatsmulti';
+import { memoryStorage, fileStorage } from 'whatsmulti';
 
 new WhatsMulti({ storage: 'file' }); // ./whatsmulti_sessions
 new WhatsMulti({ storage: fileStorage({ path: '/var/lib/wa' }) });
@@ -304,7 +310,7 @@ new WhatsMulti({ storage: 'memory' }); // tests, and nothing else
 
 ```ts
 import { MongoClient } from 'mongodb';
-import { mongoStorage, mongoLock } from '@dutakey/whatsmulti/mongo';
+import { mongoStorage, mongoLock } from 'whatsmulti/mongo';
 
 const mongo = await new MongoClient(process.env.MONGO_URL!).connect();
 const db = mongo.db('whatsmulti');
@@ -314,7 +320,7 @@ new WhatsMulti({ storage: mongoStorage({ db }), lockProvider: mongoLock({ db }) 
 
 ```ts
 import { Redis } from 'ioredis';
-import { redisStorage, redisLock } from '@dutakey/whatsmulti/redis';
+import { redisStorage, redisLock } from 'whatsmulti/redis';
 
 const redis = new Redis(process.env.REDIS_URL!);
 new WhatsMulti({ storage: redisStorage({ redis }), lockProvider: redisLock({ redis }) });
@@ -322,7 +328,7 @@ new WhatsMulti({ storage: redisStorage({ redis }), lockProvider: redisLock({ red
 
 ```ts
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { sqlStorage, sqlLock } from '@dutakey/whatsmulti/sql';
+import { sqlStorage, sqlLock } from 'whatsmulti/sql';
 
 const db = drizzle(process.env.DATABASE_URL!);
 new WhatsMulti({
@@ -344,7 +350,7 @@ Implement `StorageAdapter` and run the shared conformance suite against it. If t
 green, the adapter is finished:
 
 ```ts
-import type { StorageAdapter } from '@dutakey/whatsmulti';
+import type { StorageAdapter } from 'whatsmulti';
 
 const myStorage: StorageAdapter = {
     name: 'mine',
@@ -403,7 +409,7 @@ TypeScript instance sharing a database fence each other.
 ## Webhook forwarding
 
 ```ts
-import { webhook } from '@dutakey/whatsmulti/webhook';
+import { webhook } from 'whatsmulti/webhook';
 
 client.use(
     webhook({
@@ -444,7 +450,7 @@ An optional HTTP surface, on Hono, so a non-Node service can drive sessions:
 
 ```ts
 import { serve } from '@hono/node-server';
-import { createServer } from '@dutakey/whatsmulti/server';
+import { createServer } from 'whatsmulti/server';
 
 const app = await createServer({
     client,
@@ -535,7 +541,7 @@ Every failure is a `WhatsMultiError` with a stable `code`. **Branch on the code,
 on the message** — v1 threw bare strings that had to be matched by text.
 
 ```ts
-import { WhatsMultiError, isWhatsMultiError, hasErrorCode } from '@dutakey/whatsmulti';
+import { WhatsMultiError, isWhatsMultiError, hasErrorCode } from 'whatsmulti';
 
 try {
     await client.send('sales', to, { text: 'hi' });

@@ -10,13 +10,13 @@
         "rootDir": "..",
         "baseUrl": ".",
         "paths": {
-            "@dutakey/whatsmulti": ["../src/index.ts"],
-            "@dutakey/whatsmulti/qr": ["../src/qr/index.ts"],
-            "@dutakey/whatsmulti/mongo": ["../src/adapters/mongo/index.ts"],
-            "@dutakey/whatsmulti/redis": ["../src/adapters/redis/index.ts"],
-            "@dutakey/whatsmulti/sql": ["../src/adapters/sql/index.ts"],
-            "@dutakey/whatsmulti/webhook": ["../src/webhook/index.ts"],
-            "@dutakey/whatsmulti/server": ["../src/server/index.ts"]
+            "whatsmulti": ["../src/index.ts"],
+            "whatsmulti/qr": ["../src/qr/index.ts"],
+            "whatsmulti/mongo": ["../src/adapters/mongo/index.ts"],
+            "whatsmulti/redis": ["../src/adapters/redis/index.ts"],
+            "whatsmulti/sql": ["../src/adapters/sql/index.ts"],
+            "whatsmulti/webhook": ["../src/webhook/index.ts"],
+            "whatsmulti/server": ["../src/server/index.ts"]
         }
     },
     "include": ["**/*.ts"]

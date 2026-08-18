@@ -7,7 +7,7 @@
  *
  * Run: npx tsx examples/pairing-code.ts 628123456789
  */
-import { WhatsMulti, hasErrorCode } from '@dutakey/whatsmulti';
+import { WhatsMulti, hasErrorCode } from 'whatsmulti';
 
 const phoneNumber = process.argv[2];
 if (phoneNumber === undefined) {

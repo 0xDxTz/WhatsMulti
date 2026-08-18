@@ -5,7 +5,7 @@
  * one place that actually *loads* the driver, and it does so lazily via a dynamic
  * import. That is a deliberate trade:
  *
- * - `import '@dutakey/whatsmulti'` stays free of the Baileys module graph. Reading
+ * - `import 'whatsmulti'` stays free of the Baileys module graph. Reading
  *   SPEC_VERSION, building a storage adapter or handling an error costs nothing.
  * - A missing peer surfaces as a typed MISSING_PEER naming the install command,
  *   instead of a raw ERR_MODULE_NOT_FOUND from deep inside our import chain.

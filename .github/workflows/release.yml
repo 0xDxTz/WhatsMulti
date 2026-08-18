@@ -67,7 +67,7 @@ jobs:
             - run: npx attw --pack . --profile esm-only
 
             # A prerelease must never claim the `latest` dist-tag; that would push an
-            # RC to every `npm install @dutakey/whatsmulti`. Relevant for as long as
+            # RC to every `npm install whatsmulti`. Relevant for as long as
             # we track the Baileys 7.0.0-rc line.
             - name: Resolve dist-tag
               id: disttag

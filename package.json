@@ -1,5 +1,5 @@
 {
-    "name": "@dutakey/whatsmulti",
+    "name": "whatsmulti",
     "version": "2.0.0-rc.1",
     "description": "Multi-session WhatsApp orchestration for Node.js, built on Baileys",
     "author": "DutaKey",

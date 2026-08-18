@@ -1,7 +1,7 @@
 /**
  * QR rendering, behind the optional `qrcode` peer.
  *
- * Its own entry point -- `@dutakey/whatsmulti/qr` -- rather than part of the barrel,
+ * Its own entry point -- `whatsmulti/qr` -- rather than part of the barrel,
  * for two reasons. Core has zero runtime dependencies and this is the one place that
  * would need one; and most consumers never want a rendered QR at all, because a web
  * client wants the raw string to draw itself, not a PNG whose palette we picked.

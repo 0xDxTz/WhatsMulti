@@ -14,10 +14,18 @@ Versions are set by hand. `semantic-release` was removed in v2 — see
 
 The v2 rewrite, complete. Built phase by phase against `docs/REWRITE-v2-PLAN.md`.
 
+**The package moved.** v1 was published as `@dutakey/whatsmulti`; v2 is published as
+`whatsmulti`, unscoped. npm has no redirect between two names, so upgrading is an
+uninstall and an install — see `MIGRATION.md` §1. `@dutakey/whatsmulti` keeps working
+and stays installable at 1.6.1; it simply receives no further releases. The scope named
+a GitHub identity that no longer exists, and a breaking major is the only release where
+renaming costs a user nothing they were not already paying.
+
 A release candidate rather than a stable release, and it stays one until Baileys 7
 ships stable or we have run an RC in production for long enough to vouch for it.
-Published under the `next` dist-tag, so `npm install @dutakey/whatsmulti` keeps
-resolving to v1 until that happens.
+Published under the `next` dist-tag only, so it must be installed as
+`whatsmulti@next`: a plain `npm install whatsmulti` has no `latest` to resolve until a
+stable release exists.
 
 ### Added
 
@@ -54,7 +62,7 @@ resolving to v1 until that happens.
   a deadline and typed failures, and a media downloader that can refresh an expired
   media URL instead of failing permanently.
 - Phase 6 facade: the `WhatsMulti` client — one instance-owned config, logger, event
-  bus, plugin registry and session manager — plus `@dutakey/whatsmulti/qr`, a second
+  bus, plugin registry and session manager — plus `whatsmulti/qr`, a second
   entry point that renders a QR to the terminal, SVG or PNG behind the optional
   `qrcode` peer. Baileys 7 removed `printQRInTerminal`; `qr.print` replaces it.
 - Phase 7 cluster: a `LockProvider` contract whose row shape is the one in
@@ -62,7 +70,7 @@ resolving to v1 until that happens.
   database fence each other; an in-process provider as the default; and fail-stop
   fencing in `Session` — the lock is taken before the socket opens, renewed on a
   heartbeat, and losing it closes the socket at once and emits `session.fenced`.
-- Phase 8 adapters: `@dutakey/whatsmulti/mongo`, `/redis` and `/sql`, each a storage
+- Phase 8 adapters: `whatsmulti/mongo`, `/redis` and `/sql`, each a storage
   backend and a lock provider on its own subpath, so installing the package never
   pulls in a database driver. The SQL one covers PostgreSQL, MySQL and SQLite through
   Drizzle. All five storage backends and all four lock providers run the shared
@@ -72,7 +80,7 @@ resolving to v1 until that happens.
 - `LOGOUT_FAILED`, `SESSION_FAILED` and `MEDIA_DOWNLOAD_FAILED` error codes, a
   `{detail}` slot on `SEND_FAILED`, and JID/phone normalisation
   matching whatsmeow's PairPhone validation.
-- Phase 9 webhook: `@dutakey/whatsmulti/webhook`, an HMAC-SHA256 signed event
+- Phase 9 webhook: `whatsmulti/webhook`, an HMAC-SHA256 signed event
   forwarder with a batching window, a bounded queue, dead-lettering and retries on the
   same full-jitter schedule as reconnects. Deliveries are posted one at a time and in
   order — parallel posts with independent retries would routinely show a receiver
@@ -80,7 +88,7 @@ resolving to v1 until that happens.
   identical bytes under the original timestamp, so a receiver can verify and
   deduplicate. The envelope, the signing recipe and the verification steps are
   specified in `spec/webhook.md`.
-- Phase 10 server: `@dutakey/whatsmulti/server`, a REST + SSE control plane on Hono
+- Phase 10 server: `whatsmulti/server`, a REST + SSE control plane on Hono
   behind bearer authentication, with `/healthz` and Prometheus `/metrics`. Serving
   without a token takes an explicit `insecure: true`, and passing both is refused
   rather than resolved. The HTTP status per error code lives in `spec/errors.yaml`

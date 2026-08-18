@@ -10,7 +10,7 @@
  */
 import { createServer } from 'node:http';
 
-import { SIGNATURE_HEADER, verifySignature, type WebhookEnvelope } from '@dutakey/whatsmulti/webhook';
+import { SIGNATURE_HEADER, verifySignature, type WebhookEnvelope } from 'whatsmulti/webhook';
 
 const secret = process.env['WEBHOOK_SECRET'] ?? 'change-me';
 

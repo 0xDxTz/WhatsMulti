@@ -4,7 +4,7 @@
  *
  * Run: npx tsx examples/multi-session.ts
  */
-import { WhatsMulti, fileStorage } from '@dutakey/whatsmulti';
+import { WhatsMulti, fileStorage } from 'whatsmulti';
 
 const client = new WhatsMulti({
     storage: fileStorage({ path: './data/sessions' }),

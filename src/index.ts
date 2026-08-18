@@ -1,5 +1,5 @@
 /**
- * @dutakey/whatsmulti — multi-session WhatsApp orchestration built on Baileys.
+ * whatsmulti — multi-session WhatsApp orchestration built on Baileys.
  *
  * The rewrite lands phase by phase; see docs/REWRITE-v2-PLAN.md. Everything exported
  * from `generated/` is compiled from `spec/` and is identical in the planned Go

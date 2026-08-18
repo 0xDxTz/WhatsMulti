@@ -14,8 +14,8 @@
  */
 import { serve } from '@hono/node-server';
 
-import { WhatsMulti } from '@dutakey/whatsmulti';
-import { createServer } from '@dutakey/whatsmulti/server';
+import { WhatsMulti } from 'whatsmulti';
+import { createServer } from 'whatsmulti/server';
 
 const token = process.env['API_TOKEN'];
 if (token === undefined) {

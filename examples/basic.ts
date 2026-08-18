@@ -3,8 +3,8 @@
  *
  * Run: npx tsx examples/basic.ts
  */
-import { WhatsMulti } from '@dutakey/whatsmulti';
-import { printQr } from '@dutakey/whatsmulti/qr';
+import { WhatsMulti } from 'whatsmulti';
+import { printQr } from 'whatsmulti/qr';
 
 const client = new WhatsMulti({
     // The default. Credentials that do not survive a restart mean pairing the phone

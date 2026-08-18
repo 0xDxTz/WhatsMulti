@@ -7,8 +7,8 @@
  *
  * Run: npx tsx examples/webhook.ts
  */
-import { WhatsMulti } from '@dutakey/whatsmulti';
-import { webhook } from '@dutakey/whatsmulti/webhook';
+import { WhatsMulti } from 'whatsmulti';
+import { webhook } from 'whatsmulti/webhook';
 
 const client = new WhatsMulti({ storage: 'file' });
 

@@ -9,23 +9,31 @@ you used is not here, it was removed on purpose and the reason is in the last se
 
 ---
 
-## 1. Runtime and install
+## 1. The package moved, and the runtime changed
+
+v1 was published as `@dutakey/whatsmulti`. v2 is published as **`whatsmulti`**, without
+a scope. npm has no redirect between the two, so this is a real uninstall and install
+rather than a version bump:
 
 ```sh
-npm install @dutakey/whatsmulti@next @whiskeysockets/baileys
+npm uninstall @dutakey/whatsmulti
+npm install whatsmulti@next @whiskeysockets/baileys
 ```
+
+`@dutakey/whatsmulti` keeps working exactly as it does today — nothing was unpublished,
+and 1.6.1 remains installable. It simply receives no further releases.
 
 - **Node >= 20.** v1 declared no `engines` range at all, so it installed anywhere and
   failed at runtime instead.
-- **ESM only.** `require('@dutakey/whatsmulti')` no longer works. Either set
-  `"type": "module"` in your `package.json`, rename entry files to `.mjs`, or reach it
-  with a dynamic `await import(...)` from CommonJS.
+- **ESM only.** `@dutakey/whatsmulti` shipped a CommonJS build; `whatsmulti` does not.
+  Either set `"type": "module"` in your `package.json`, rename entry files to `.mjs`,
+  or reach it with a dynamic `await import(...)` from CommonJS.
 - **Baileys is now yours to install.** It is a peer dependency so you own the version,
   including a fork or a pin. v2 requires the `7.0.0-rc` line: v7 introduces the LID
   identity system and three auth key types (`lid-mapping`, `device-list`, `tctoken`)
   that a v6-shaped auth state cannot persist.
 - **`mongoose` is gone.** The MongoDB adapter uses the raw `mongodb` driver, and only
-  if you import `@dutakey/whatsmulti/mongo`.
+  if you import `whatsmulti/mongo`.
 - **`pino` and `pino-pretty` are gone.** The default logger is ~30 lines with no
   dependencies; any pino-compatible logger can still be injected.
 
@@ -33,7 +41,7 @@ npm install @dutakey/whatsmulti@next @whiskeysockets/baileys
 
 ```diff
 -const WhatsMulti = require('@dutakey/whatsmulti');
-+import { WhatsMulti } from '@dutakey/whatsmulti';
++import { WhatsMulti } from 'whatsmulti';
 ```
 
 There is no default export any more. A default export that is also the only export
@@ -154,13 +162,13 @@ carries `{ from, to, reason }`, and the lifecycle list also gains
 ```diff
 -client.on('qr', ({ image, qr }) => { /* image was a PNG data URL */ });
 +client.on('qr', async ({ qr, attempt, expiresAt }) => {
-+    const image = await toDataURL(qr); // from '@dutakey/whatsmulti/qr'
++    const image = await toDataURL(qr); // from 'whatsmulti/qr'
 +});
 ```
 
 The QR payload no longer carries a rendered image. Rendering pulled `qrcode` into every
 install, including the majority who print the QR to a terminal or forward the raw
-string; it now lives behind the optional `@dutakey/whatsmulti/qr` subpath. `printQR`
+string; it now lives behind the optional `whatsmulti/qr` subpath. `printQR`
 as a socket option is replaced by `qr: { print: true }` in the constructor, or by
 calling `printQr(qr)` yourself.
 
@@ -201,7 +209,7 @@ growing without limit.
 -try { ... } catch (error) {
 -    if (error.message === 'Session not found') ...;
 -}
-+import { hasErrorCode } from '@dutakey/whatsmulti';
++import { hasErrorCode } from 'whatsmulti';
 +try { ... } catch (error) {
 +    if (hasErrorCode(error, 'SESSION_NOT_FOUND')) ...;
 +}
@@ -263,8 +271,8 @@ collection per session id** (and a global Mongoose model per session, which coll
 name); v2 uses a single namespaced collection. Read each session's `creds` document,
 `JSON.parse` its `data` field, and write it as `whatsmulti:<sessionId>:creds`.
 
-New backends worth knowing about: `@dutakey/whatsmulti/redis` and
-`@dutakey/whatsmulti/sql` (PostgreSQL, MySQL, SQLite) did not exist in v1.
+New backends worth knowing about: `whatsmulti/redis` and
+`whatsmulti/sql` (PostgreSQL, MySQL, SQLite) did not exist in v1.
 
 ## 9. Removed, and why
 
@@ -289,9 +297,9 @@ New backends worth knowing about: `@dutakey/whatsmulti/redis` and
 - **A distributed lock** — `lockProvider: redisLock({ redis })` and friends. Two
   replicas holding one session corrupt each other's Signal state; the lock is taken
   before the socket opens and losing it closes the socket at once.
-- **`@dutakey/whatsmulti/webhook`** — signed, ordered, retrying HTTP delivery, instead
+- **`whatsmulti/webhook`** — signed, ordered, retrying HTTP delivery, instead
   of a hand-rolled `client.on(...)` that forwards with `fetch`.
-- **`@dutakey/whatsmulti/server`** — an authenticated REST + SSE control plane, if
+- **`whatsmulti/server`** — an authenticated REST + SSE control plane, if
   something outside Node needs to drive sessions.
 - **`process(listener)`** — the driver's buffered batch intact. v1 re-split it, which
   discarded the batching Baileys works to provide.

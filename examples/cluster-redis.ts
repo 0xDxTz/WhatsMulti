@@ -11,8 +11,8 @@
  */
 import { Redis } from 'ioredis';
 
-import { WhatsMulti } from '@dutakey/whatsmulti';
-import { redisLock, redisStorage } from '@dutakey/whatsmulti/redis';
+import { WhatsMulti } from 'whatsmulti';
+import { redisLock, redisStorage } from 'whatsmulti/redis';
 
 const redis = new Redis(process.env['REDIS_URL'] ?? 'redis://127.0.0.1:6379');
 

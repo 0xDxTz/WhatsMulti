@@ -3,7 +3,7 @@ info:
     title: WhatsMulti Control Plane
     version: 0.2.12
     description: >
-        Implemented identically by @dutakey/whatsmulti/server (Hono) and by
+        Implemented identically by whatsmulti/server (Hono) and by
         whatsmulti-go (net/http). An API client works unchanged against either.
         Both are contract-tested against this document.
     license: { name: MIT }

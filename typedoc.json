@@ -2,7 +2,7 @@
     "$schema": "https://typedoc.org/schema.json",
 
     // One entry per published subpath, so the generated site has the same shape as
-    // the exports map. A reader who imports `@dutakey/whatsmulti/webhook` should find
+    // the exports map. A reader who imports `whatsmulti/webhook` should find
     // a page with exactly what that import gives them, and nothing else.
     "entryPoints": [
         "src/index.ts",
@@ -16,7 +16,7 @@
     "tsconfig": "tsconfig.build.json",
     "out": "docs/api",
 
-    "name": "@dutakey/whatsmulti",
+    "name": "whatsmulti",
     // No landing README: the repo README links to spec/ and examples/ with paths that
     // only resolve on GitHub, and rewriting them for the API site would leave two
     // versions of the same document to keep in step.

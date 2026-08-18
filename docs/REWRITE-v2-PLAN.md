@@ -5,7 +5,9 @@
 > Target branch: `v2`
 >
 > Kept as written rather than rewritten in the past tense: the value of this document
-> now is the reasoning behind each decision, which the code cannot carry.
+> now is the reasoning behind each decision, which the code cannot carry. One thing it
+> predates: the package ships as `whatsmulti`, not `@dutakey/whatsmulti` — the scope
+> named a GitHub identity that was renamed before release.
 >
 > **Locked decisions**
 >
