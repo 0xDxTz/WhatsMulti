@@ -52,12 +52,15 @@ export interface QrPrintOptions extends QrTerminalOptions {
  * the peer: a consumer who has not installed it -- which is every consumer who does
  * not render QR codes -- would otherwise fail to typecheck.
  */
-type RendererOptions = QrOptions & { readonly type?: string | undefined; readonly small?: boolean | undefined };
+export type QrRendererOptions = QrOptions & {
+    readonly type?: string | undefined;
+    readonly small?: boolean | undefined;
+};
 
-interface QrRenderer {
-    toString(text: string, options: RendererOptions): Promise<string>;
-    toDataURL(text: string, options: RendererOptions): Promise<string>;
-    toBuffer(text: string, options: RendererOptions): Promise<Buffer>;
+export interface QrRenderer {
+    toString(text: string, options: QrRendererOptions): Promise<string>;
+    toDataURL(text: string, options: QrRendererOptions): Promise<string>;
+    toBuffer(text: string, options: QrRendererOptions): Promise<Buffer>;
 }
 
 export type QrLoader = () => Promise<unknown>;

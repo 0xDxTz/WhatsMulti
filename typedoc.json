@@ -1,0 +1,43 @@
+{
+    "$schema": "https://typedoc.org/schema.json",
+
+    // One entry per published subpath, so the generated site has the same shape as
+    // the exports map. A reader who imports `@dutakey/whatsmulti/webhook` should find
+    // a page with exactly what that import gives them, and nothing else.
+    "entryPoints": [
+        "src/index.ts",
+        "src/qr/index.ts",
+        "src/adapters/mongo/index.ts",
+        "src/adapters/redis/index.ts",
+        "src/adapters/sql/index.ts",
+        "src/webhook/index.ts",
+        "src/server/index.ts"
+    ],
+    "tsconfig": "tsconfig.build.json",
+    "out": "docs/api",
+
+    "name": "@dutakey/whatsmulti",
+    // No landing README: the repo README links to spec/ and examples/ with paths that
+    // only resolve on GitHub, and rewriting them for the API site would leave two
+    // versions of the same document to keep in step.
+    "readme": "none",
+    "excludePrivate": true,
+    "excludeInternal": true,
+    "includeVersion": true,
+    "githubPages": false,
+    "navigationLinks": {
+        "GitHub": "https://github.com/0xDxTz/WhatsMulti",
+        "Migration": "https://github.com/0xDxTz/WhatsMulti/blob/main/MIGRATION.md",
+        "Spec": "https://github.com/0xDxTz/WhatsMulti/tree/main/spec"
+    },
+
+    // Every export must be reachable from an entry point and every link must resolve.
+    // A broken reference in the API docs is the kind of thing nobody notices until a
+    // user does, so CI treats it as a failure.
+    "validation": {
+        "notExported": true,
+        "invalidLink": true,
+        "notDocumented": false
+    },
+    "treatWarningsAsErrors": true
+}

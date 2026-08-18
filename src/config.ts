@@ -14,8 +14,15 @@ import { isLogLevel, LOG_LEVELS, type Logger, type LogLevel } from './logger.js'
  * mutable config that two client instances silently shared.
  */
 
-/** Optional in the `exactOptionalPropertyTypes` sense: the key may also be present-but-undefined. */
-type Options<T> = { readonly [K in keyof T]?: T[K] | undefined };
+/**
+ * Every key of a config block, optional in the `exactOptionalPropertyTypes` sense:
+ * present-but-undefined is allowed, which is what lets a caller spread a partially
+ * built object without filtering the undefined keys out first.
+ *
+ * Exported because it appears in {@link WhatsMultiConfig}: a consumer assembling one
+ * block at a time needs to be able to name its type.
+ */
+export type ConfigOverrides<T> = { readonly [K in keyof T]?: T[K] | undefined };
 
 export interface ReconnectConfig {
     readonly enabled: boolean;
@@ -75,12 +82,12 @@ export interface WhatsMultiConfig {
     readonly logger?: Logger | undefined;
     readonly logLevel?: LogLevel | undefined;
     readonly driverLogLevel?: LogLevel | undefined;
-    readonly reconnect?: Options<ReconnectConfig> | undefined;
-    readonly qr?: Options<QrConfig> | undefined;
-    readonly pairing?: Options<PairingConfig> | undefined;
-    readonly send?: Options<SendConfig> | undefined;
-    readonly lock?: Options<LockConfig> | undefined;
-    readonly load?: Options<LoadConfig> | undefined;
+    readonly reconnect?: ConfigOverrides<ReconnectConfig> | undefined;
+    readonly qr?: ConfigOverrides<QrConfig> | undefined;
+    readonly pairing?: ConfigOverrides<PairingConfig> | undefined;
+    readonly send?: ConfigOverrides<SendConfig> | undefined;
+    readonly lock?: ConfigOverrides<LockConfig> | undefined;
+    readonly load?: ConfigOverrides<LoadConfig> | undefined;
 }
 
 /** spec/config.yaml#session_id.pattern */

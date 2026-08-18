@@ -105,6 +105,11 @@ jobs:
             - run: npx publint
             - run: npx attw --pack . --profile esm-only
 
+            # typedoc runs with treatWarningsAsErrors, so this fails on a broken link
+            # or on a public signature that references a type nothing exports -- both
+            # of which a consumer hits before we would.
+            - run: npm run docs
+
     coverage:
         name: Coverage
         runs-on: ubuntu-latest

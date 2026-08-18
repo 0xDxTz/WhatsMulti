@@ -4,5 +4,6 @@ dist
 whatsmulti_sessions
 lib
 coverage
+docs/api
 *.tgz
 .DS_Store

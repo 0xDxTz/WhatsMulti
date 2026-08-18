@@ -68,6 +68,7 @@ export {
 } from './config.js';
 export type {
     WhatsMultiConfig,
+    ConfigOverrides,
     ResolvedConfig,
     ReconnectConfig,
     QrConfig,

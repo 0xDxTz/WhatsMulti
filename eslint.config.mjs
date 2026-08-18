@@ -70,7 +70,7 @@ layerConfigs.push(GENERATED_CONFIG);
 
 export default tseslint.config(
     {
-        ignores: ['dist/**', 'lib/**', 'node_modules/**', 'legacy/**', 'landing/**', 'coverage/**'],
+        ignores: ['dist/**', 'lib/**', 'node_modules/**', 'legacy/**', 'landing/**', 'coverage/**', 'docs/api/**'],
     },
     js.configs.recommended,
     ...tseslint.configs.recommendedTypeChecked,

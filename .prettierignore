@@ -1,6 +1,7 @@
 dist
 lib
 coverage
+docs/api
 node_modules
 bun.lock
 
