@@ -637,4 +637,4 @@ Releases are manual: bump `version`, write the `CHANGELOG.md` entry, then
 
 ## License
 
-[MIT](LICENSE) © DutaKey
+[MIT](LICENSE) © DxTz Dev

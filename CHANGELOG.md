@@ -157,6 +157,12 @@ stable release exists.
   the numbers JSON returns, which app-state key rotation compares against.
 - Resetting a corrupt Signal key store no longer removes credentials, so it no longer
   unlinks the device.
+- The `LICENSE` file now matches the licence this package has always been published
+  under. Every release since 1.1.0 declared `MIT` in its npm metadata while the
+  repository carried the GPL-3.0 text, which is a contradiction a user could only
+  resolve by guessing. MIT is the grant that was actually made to everyone who
+  installed it, and it is now the only statement in the repository. No permission
+  anyone already had is withdrawn by this.
 
 ### Removed
 
