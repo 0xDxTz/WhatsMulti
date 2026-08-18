@@ -1,6 +1,8 @@
 node_modules
-package-lock.json
 bun.lockb
 dist
 whatsmulti_sessions
 lib
+coverage
+*.tgz
+.DS_Store

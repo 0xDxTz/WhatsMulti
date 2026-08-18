@@ -1,52 +1,104 @@
 {
     "name": "@dutakey/whatsmulti",
-    "version": "0.0.0-development",
-    "description": "Whatsapp Client With Multi Session",
+    "version": "2.0.0-rc.0",
+    "description": "Multi-session WhatsApp orchestration for Node.js, built on Baileys",
     "author": "DutaKey",
-    "main": "lib/index.js",
-    "types": "lib/index.d.ts",
-    "scripts": {
-        "build": "tsc",
-        "semantic-release": "semantic-release",
-        "lint": "eslint .",
-        "lint:fix": "eslint . --fix",
-        "prettier": "prettier --check .",
-        "prettier:fix": "prettier --write .",
-        "example": "bun run Example/example.ts",
-        "prepublish-check": "bun run build && bun run lint:fix && bun run prettier:fix"
+    "license": "MIT",
+    "type": "module",
+    "engines": {
+        "node": ">=20"
     },
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+        },
+        "./package.json": "./package.json"
+    },
+    "types": "./dist/index.d.ts",
+    "sideEffects": false,
     "files": [
-        "lib/*",
-        "README.md"
+        "dist",
+        "README.md",
+        "CHANGELOG.md",
+        "LICENSE"
     ],
     "publishConfig": {
-        "access": "public"
+        "access": "public",
+        "provenance": true
     },
-    "dependencies": {
-        "@whiskeysockets/baileys": "^6.7.17",
-        "mongoose": "^8.15.0",
-        "pino": "^7.11.0",
-        "pino-pretty": "^13.0.0",
-        "qrcode": "^1.5.4"
+    "scripts": {
+        "build": "tsc -p tsconfig.build.json",
+        "typecheck": "tsc -p tsconfig.json --noEmit",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "coverage": "vitest run --coverage",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
+        "gen": "node scripts/generate.mjs",
+        "gen:check": "node scripts/generate.mjs --check",
+        "vectors": "node scripts/generate-vectors.mjs",
+        "verify:pack": "npm run build && publint && attw --pack . --ignore-rules cjs-resolves-to-esm",
+        "check": "npm run gen:check && npm run lint && npm run typecheck && npm run test"
+    },
+    "peerDependencies": {
+        "@whiskeysockets/baileys": ">=7.0.0-rc14 <8",
+        "drizzle-orm": ">=0.36",
+        "hono": ">=4",
+        "ioredis": ">=5",
+        "mongodb": ">=6",
+        "pino": ">=9",
+        "qrcode": ">=1.5"
+    },
+    "peerDependenciesMeta": {
+        "drizzle-orm": {
+            "optional": true
+        },
+        "hono": {
+            "optional": true
+        },
+        "ioredis": {
+            "optional": true
+        },
+        "mongodb": {
+            "optional": true
+        },
+        "pino": {
+            "optional": true
+        },
+        "qrcode": {
+            "optional": true
+        }
     },
     "devDependencies": {
-        "@eslint/js": "^9.27.0",
-        "eslint": "^9.27.0",
-        "globals": "^16.1.0",
-        "semantic-release": "^24.2.4",
-        "typescript": "^5.8.3",
-        "typescript-eslint": "^8.32.1"
+        "@arethetypeswrong/cli": "^0.18.2",
+        "@eslint/js": "^9.39.2",
+        "@types/node": "^24.10.1",
+        "@vitest/coverage-v8": "^3.2.4",
+        "@whiskeysockets/baileys": "7.0.0-rc14",
+        "eslint": "^9.39.2",
+        "globals": "^16.5.0",
+        "prettier": "^3.6.2",
+        "publint": "^0.3.16",
+        "typescript": "^5.9.3",
+        "typescript-eslint": "^8.56.0",
+        "vitest": "^3.2.4",
+        "yaml": "^2.8.1"
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/DutaKey/WhatsMulti.git"
+        "url": "git+https://github.com/0xDxTz/WhatsMulti.git"
     },
     "keywords": [
-        "whatsapp"
+        "whatsapp",
+        "baileys",
+        "multi-session",
+        "whatsapp-api"
     ],
-    "license": "MIT",
     "bugs": {
-        "url": "https://github.com/DutaKey/WhatsMulti/issues"
+        "url": "https://github.com/0xDxTz/WhatsMulti/issues"
     },
-    "homepage": "https://github.com/DutaKey/WhatsMulti#readme"
+    "homepage": "https://github.com/0xDxTz/WhatsMulti#readme"
 }
