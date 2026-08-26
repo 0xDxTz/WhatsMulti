@@ -35,7 +35,7 @@ const app = await createServer({
     client,
     // A list, so a token can be rotated without a restart.
     token: [token],
-    version: '2.0.0-rc.1',
+    version: '2.0.0',
     // basePath: '/api',
     streamBuffer: 1000,
     heartbeatMs: 30_000,

@@ -17,7 +17,7 @@ rather than a version bump:
 
 ```sh
 npm uninstall @dutakey/whatsmulti
-npm install whatsmulti@next @whiskeysockets/baileys
+npm install whatsmulti @whiskeysockets/baileys
 ```
 
 `@dutakey/whatsmulti` keeps working exactly as it does today — nothing was unpublished,

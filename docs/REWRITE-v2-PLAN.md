@@ -1,6 +1,6 @@
 # WhatsMulti v2 — Rewrite Plan
 
-> Status: **Implemented.** Phases 0-11 shipped as `v2.0.0-rc.1`; phase 12 (the Go
+> Status: **Implemented.** Phases 0-11 shipped as `v2.0.0`; phase 12 (the Go
 > port) is the remaining work and lives in its own repo.
 > Target branch: `v2`
 >
@@ -636,7 +636,7 @@ Each phase ends green (lint + typecheck + tests) and is one reviewable commit ra
 | 8   | Adapters     | `mongo` · `redis` · `sql` (+ their lock impls)                                        | conformance green ×5                        |
 | 9   | Webhook      | plugin + signing + retry                                                              | signature vectors                           |
 | 10  | Server       | Hono app, auth, SSE, metrics                                                          | OpenAPI contract tests                      |
-| 11  | Release      | README, `MIGRATION.md`, `CHANGELOG.md`, examples, typedoc                             | `v2.0.0-rc.1` published under `next`        |
+| 11  | Release      | README, `MIGRATION.md`, `CHANGELOG.md`, examples, typedoc                             | `v2.0.0` published under `latest`           |
 | 12  | **Go port**  | `whatsmulti-go` consuming `spec/` as a submodule                                      | same vector suite green in Go               |
 
 Phases 0–6 are the shippable core; 7–11 are additive and can each ship as a minor. Phase 0.5 is deliberately early — writing the spec before the code is what makes the Go port a port rather than a rewrite.

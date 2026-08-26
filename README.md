@@ -3,23 +3,19 @@
 Multi-session WhatsApp orchestration for Node.js, built on
 [Baileys](https://github.com/WhiskeySockets/Baileys).
 
-[![npm](https://img.shields.io/npm/v/whatsmulti/next?label=npm%20next&color=%23CB3837)](https://www.npmjs.com/package/whatsmulti)
+[![npm](https://img.shields.io/npm/v/whatsmulti?color=%23CB3837)](https://www.npmjs.com/package/whatsmulti)
 [![npm downloads](https://img.shields.io/npm/dw/whatsmulti?label=downloads&color=%23CB3837)](https://www.npmjs.com/package/whatsmulti)
-[![node](https://img.shields.io/node/v/whatsmulti/next?label=node)](https://nodejs.org)
+[![node](https://img.shields.io/node/v/whatsmulti?label=node)](https://nodejs.org)
 
 > **v2 is a full rewrite and is breaking**, and the package moved:
 > v1 was published as `@dutakey/whatsmulti` and stays there, unchanged. v2 lives here,
-> under the `next` dist-tag while Baileys 7 is in release candidate.
+> unscoped, as `whatsmulti`.
 > Coming from v1, read [`MIGRATION.md`](MIGRATION.md) — the API changed shape, not
 > just names.
 
 ```sh
-npm install whatsmulti@next @whiskeysockets/baileys
+npm install whatsmulti @whiskeysockets/baileys
 ```
-
-The `@next` is required, not decorative: while v2 is a release candidate it is
-published under the `next` dist-tag only, and there is no `latest` for a plain
-`npm install whatsmulti` to resolve.
 
 ---
 
@@ -455,7 +451,7 @@ import { createServer } from 'whatsmulti/server';
 const app = await createServer({
     client,
     token: process.env.API_TOKEN!, // or a list, to rotate without a restart
-    version: '2.0.0-rc.1',
+    version: '2.0.0',
 });
 
 serve({ fetch: app.fetch, port: 3000 });

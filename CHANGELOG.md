@@ -10,6 +10,15 @@ Versions are set by hand. `semantic-release` was removed in v2 — see
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-08-26
+
+Promotes `2.0.0-rc.1` to stable. No code changes — same build, same behaviour.
+
+### Changed
+
+- Published under the `latest` dist-tag. `npm install whatsmulti` now resolves
+  without `@next`.
+
 ## [2.0.0-rc.1] - 2026-08-18
 
 The v2 rewrite, complete. Built phase by phase against `docs/REWRITE-v2-PLAN.md`.
@@ -170,5 +179,6 @@ stable release exists.
 - v1 source under `legacy/`. It was kept through the rewrite so each phase could be
   checked against what v1 actually did; `git log` holds it from here.
 
-[unreleased]: https://github.com/0xDxTz/WhatsMulti/compare/v2.0.0-rc.1...HEAD
+[unreleased]: https://github.com/0xDxTz/WhatsMulti/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/0xDxTz/WhatsMulti/compare/v2.0.0-rc.1...v2.0.0
 [2.0.0-rc.1]: https://github.com/0xDxTz/WhatsMulti/releases/tag/v2.0.0-rc.1
