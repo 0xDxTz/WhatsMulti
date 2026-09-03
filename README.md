@@ -14,12 +14,8 @@ Multi-session WhatsApp orchestration for Node.js, built on
 > just names.
 
 ```sh
-npm install whatsmulti @whiskeysockets/baileys qrcode
+npm install whatsmulti @whiskeysockets/baileys
 ```
-
-`qrcode` is only needed for the `whatsmulti/qr` subpath used below — pairing with a
-code instead of a QR does not need it. See the peer table below for what each subpath
-needs.
 
 ---
 
