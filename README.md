@@ -65,6 +65,10 @@ stack trace.
 
 ## Quick start
 
+This renders a QR in the terminal, which needs the `qrcode` peer:
+`npm install qrcode`. Pairing with a code instead needs no extra peer — see
+[`pairing-code.ts`](examples/pairing-code.ts).
+
 ```ts
 import { WhatsMulti } from 'whatsmulti';
 import { printQr } from 'whatsmulti/qr';
